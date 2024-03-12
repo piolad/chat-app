@@ -4,6 +4,10 @@ use std::env;
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
 
+
+
+
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database_url = "postgres://postgres:mysecretpassword@auth-service-db/postgres";
@@ -27,9 +31,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             last_name VARCHAR(100)
     )"#;
 
-    // client
-    //     .execute(table_creation_query, &[])
-    //     .await?;
+    client
+        .execute(table_creation_query, &[])
+        .await?;
 
     let addUserQuery = r#"
         INSERT INTO users (email, username, hashed_password, first_name, last_name)
@@ -38,6 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     client
         .execute(addUserQuery, &[]).await?;
+    
     
     Ok(())
 }
