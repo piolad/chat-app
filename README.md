@@ -4,13 +4,13 @@
 
 This real-time chat application enables users to communicate with each other in real-time. It's built on a microservices architecture using Docker, with services written in Python, C#, and C++.
 
-<img src="./docs/general-design.png" alt="General design" width="50%"  align="center" />
+<img src="./docs/general-design.png" alt="General design" width="70%"  align="center" />
 
 ## Features
 
 - User authentication and registration.
 - Real-time text messaging.
-- Analytics dashboard for message and user activity insights.
+- Information about weather in the user's location.
 
 ## Getting Started
 
@@ -24,5 +24,5 @@ This real-time chat application enables users to communicate with each other in 
 1. Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/real-time-chat-app.git
+git clone https://github.com/piolad/chat-app.git
 cd real-time-chat-app
