@@ -4,10 +4,6 @@ use std::env;
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
 
-
-
-
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database_url = "postgres://postgres:mysecretpassword@auth-service-db/postgres";
