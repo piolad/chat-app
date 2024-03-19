@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  auth-service:
+    build:
+      context: ./auth-service
+    depends_on:
+      - auth-service-db
+    networks:
+      - auth-network
+
+  auth-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    networks:
+      - auth-network
+    ports:
+      - "5432:5432"
+
+networks:
+  auth-network:
+    driver: bridge
