@@ -1,8 +1,11 @@
 use tonic::{transport::Server, Request, Response, Status};
-
 use std::env;
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
+
+mod proto{      //podobno tak trzeba
+    tonic::include_proto!("auth");
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -24,7 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             username VARCHAR(50) NOT NULL UNIQUE,
             hashed_password TEXT NOT NULL,
             first_name VARCHAR(100),
-            last_name VARCHAR(100)
+            last_name VARCHAR(100),
+            date DATE NOT NULL
     )"#;
 
     client
@@ -32,13 +36,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     let addUserQuery = r#"
-        INSERT INTO users (email, username, hashed_password, first_name, last_name)
-        VALUES ('brud@brud.pl', 'brud', '8rud!', 'Brudas', 'Brudowski')
+        INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
+        VALUES ('brud@brud.pl', 'brud', '8rud!', 'Brudas', 'Brudowski', '2004-01-01')
     "#;
 
     client
         .execute(addUserQuery, &[]).await?;
-    
     
     Ok(())
 }
