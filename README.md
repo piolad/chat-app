@@ -36,3 +36,17 @@ docker run --net auth-network --rm -p 5432:5432 --name auth-service-db -e POSTGR
 docker build -t auth-service:0.6 .\auth-service\
 docker run --rm  --net auth-network --name auth-service auth-service:0.6
 ```
+
+Or you can do  
+```bash
+docker-compose up
+```
+
+3. To finish run:
+```bash
+docker-compose down --rmi local --volumes
+```
+4. To see the logs of docker:
+```bash
+docker-compose logs -f
+```
