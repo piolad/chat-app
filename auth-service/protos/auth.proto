@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package auth;
+
 message LoginAttempt {
     oneof loginData {
         string username = 1;
