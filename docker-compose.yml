@@ -17,6 +17,13 @@ services:
     ports:
       - "5432:5432"
 
+  browser-facade:
+    build:
+      context: ./browser-facade
+    ports:
+      - "5000:8080"
+    
+
 networks:
   auth-network:
     driver: bridge
