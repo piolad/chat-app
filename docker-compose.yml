@@ -15,7 +15,7 @@ services:
     networks:
       - auth-network
     ports:
-      - "5432:5432"
+      - "5001:5432"
 
   browser-facade:
     build:
