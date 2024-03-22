@@ -10,6 +10,7 @@ string password
 returns
 ```rust
 enum/string status
+string keyofsesion
 ```
 
 ## function Register() - Auth-Service
