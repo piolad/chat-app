@@ -25,9 +25,16 @@ impl Auth for AuthService{
     async fn login(&self, request: Request<proto::LoginRequest>) -> Result<Response<proto::LoginResponse>, Status> {
         let request = request.into_inner();
 
-        let username = request.username;
+        let login_identifier = match request.login_data {
+            Some(proto::login_request::LoginData::Username(username)) => username,
+            Some(proto::login_request::LoginData::Email(email)) => email,
+            None => {
+                return Err(Status::invalid_argument("Username or email is required"));
+            }
+        };
+
         let password = request.password;
-        let mix = format!("{}{}", username, password);
+        let mix = format!("{}{}", login_identifier, password);
         
         let reply = proto::LoginResponse {
             status: mix.to_string(),

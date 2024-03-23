@@ -8,11 +8,11 @@ service Auth{
 }
 
 message LoginRequest {
-    // oneof loginData {
-    //     string username = 1;
-    //     string email = 2;
-    // }
-    string username = 1;
+    oneof loginData {
+        string username = 1;
+        string email = 2;
+    }
+    // string username = 1;
     string password = 3;
 }
 
@@ -33,17 +33,7 @@ message RegisterAttemptResponse {
 
 enum loginRequestResult {
     LOGIN_SUCCESS = 0;
-    LOGIN_INVALID_USERNAME = 1;
-    LOGIN_INVALID_EMAIL = 2;
-    LOGIN_INVALID_PASSWORD = 3;
-
-    LOGIN_USERDATA_DB_TIMEOUT = 5;
-    LOGIN_USERDATA_DB_UNAVAILABLE = 6;
-    LOGIN_USERDATA_DB_UNKNOWN_ERROR = 7;
-
-    LOGIN_ACTIVESESSIONS_DB_TIMEOUT = 8;
-    LOGIN_ACTIVESESSIONS_DB_UNAVAILABLE = 9;
-    LOGIN_ACTIVESESSIONS_DB_UNKNOWN_ERROR = 10;
+    LOGIN_INVALID_CREDENTIALS = 1;
 }
 
 enum registerAttemptResult {
