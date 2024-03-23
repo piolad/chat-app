@@ -2,16 +2,23 @@ syntax = "proto3";
 
 package auth;
 
-message LoginAttempt {
-    oneof loginData {
-        string username = 1;
-        string email = 2;
-    }
+service Auth{
+    rpc Login(LoginRequest) returns (LoginResponse);
+    //rpc Register(RegisterAttempt) returns (RegisterAttemptResponse);
+}
+
+message LoginRequest {
+    // oneof loginData {
+    //     string username = 1;
+    //     string email = 2;
+    // }
+    string username = 1;
     string password = 3;
 }
 
-message LoginAttemptResponse {
-    loginAttemptResult result = 1;
+message LoginResponse {
+    string status = 1;
+    // loginRequestResult result = 1;
 }
 
 message RegisterAttempt {
@@ -24,7 +31,7 @@ message RegisterAttemptResponse {
     registerAttemptResult result = 1;
 }
 
-enum loginAttemptResult {
+enum loginRequestResult {
     LOGIN_SUCCESS = 0;
     LOGIN_INVALID_USERNAME = 1;
     LOGIN_INVALID_EMAIL = 2;

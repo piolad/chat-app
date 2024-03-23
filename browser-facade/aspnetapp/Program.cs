@@ -32,6 +32,11 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+app.MapGet("/", () =>
+{
+    return Results.Redirect("/MainMenu");
+});
+
 CancellationTokenSource cancellation = new();
 app.Lifetime.ApplicationStopping.Register( () =>
 {
