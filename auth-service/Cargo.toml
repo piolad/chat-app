@@ -6,14 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tonic = "0.6.1"
-tonic-build = "0.6.1"
-prost = "0.9.0"
+tonic = "0.11.0"
+tonic-build = "0.11.0"
+prost = "0.12.3"
 tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = "0.7"
 dotenv = "0.15"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+bcrypt = "0.15.1"
 
-#[build-dependencies]
-#tonic-build = "0.7"
+[build-dependencies]
+tonic-build = "0.11.0"

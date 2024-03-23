@@ -1,12 +1,20 @@
 use tonic::{transport::Server, Request, Response, Status};
-
 use std::env;
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
+use bcrypt::{hash, verify};
 
+mod proto{      //podobno tak trzeba
+    tonic::include_proto!("auth");
+}
 
+fn hash_password(password: &str) -> String {
+    bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
+}
 
-
+fn verify_password(password: &str, hashed_password: &str) -> bool {
+    bcrypt::verify(password, hashed_password).expect("Failed to verify password")
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,21 +36,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             username VARCHAR(50) NOT NULL UNIQUE,
             hashed_password TEXT NOT NULL,
             first_name VARCHAR(100),
-            last_name VARCHAR(100)
+            last_name VARCHAR(100),
+            date DATE NOT NULL
     )"#;
 
     client
         .execute(table_creation_query, &[])
         .await?;
 
-    let addUserQuery = r#"
-        INSERT INTO users (email, username, hashed_password, first_name, last_name)
-        VALUES ('brud@brud.pl', 'brud', '8rud!', 'Brudas', 'Brudowski')
-    "#;
+    let h_password = hash_password("8rud!");
+
+    let addUserQuery = format!(
+        r#"
+            INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
+            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
+        "#, h_password
+    );
 
     client
-        .execute(addUserQuery, &[]).await?;
-    
+        .execute(addUserQuery.as_str(), &[]).await?;
     
     Ok(())
 }
