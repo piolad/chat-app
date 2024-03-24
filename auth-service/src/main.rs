@@ -5,25 +5,29 @@ use dotenv::dotenv;
 use bcrypt::{hash, verify};
 use proto::auth_server::{Auth, AuthServer};
 
-mod proto{
+mod proto {
     tonic::include_proto!("auth");
 }
 
-fn hash_password(password: &str) -> String {
-    bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
+#[derive(Debug)]
+struct AuthService {
+    client: tokio_postgres::Client,
 }
 
-fn verify_password(password: &str, hashed_password: &str) -> bool {
-    bcrypt::verify(password, hashed_password).expect("Failed to verify password")
+impl AuthService {
+    fn new(client: tokio_postgres::Client) -> Self {
+        Self { client }
+    }
 }
-
-#[derive(Debug, Default)]
-struct AuthService {}
 
 #[tonic::async_trait]
-impl Auth for AuthService{
-    async fn login(&self, request: Request<proto::LoginRequest>) -> Result<Response<proto::LoginResponse>, Status> {
+impl Auth for AuthService {
+    async fn login(
+        &self,
+        request: Request<proto::LoginRequest>,
+    ) -> Result<Response<proto::LoginResponse>, Status> {
         let request = request.into_inner();
+        let password = request.password;
 
         let login_identifier = match request.login_data {
             Some(proto::login_request::LoginData::Username(username)) => username,
@@ -33,24 +37,47 @@ impl Auth for AuthService{
             }
         };
 
-        let password = request.password;
-        let mix = format!("{}{}", login_identifier, password);
-        
-        let reply = proto::LoginResponse {
-            status: mix.to_string(),
+        let user_query = "SELECT email,username,hashed_password FROM users WHERE email = $1 OR username = $1";
+        let row = match self.client.query_one(user_query, &[&login_identifier]).await {
+            Ok(row) => row,
+            Err(_) => {
+                return Err(Status::not_found("User not found"));
+            }
         };
-        Ok(Response::new(reply))
+
+        let email: String = row.get(0);
+        let username: String = row.get(1);
+        let hashed_password: String = row.get(2);
+
+        if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
+            let reply = proto::LoginResponse {
+                status: "Success".to_string(),
+            };
+            return Ok(Response::new(reply));
+        } else {
+            return Err(Status::unauthenticated("Invalid credentials"));
+        }
     }
+}
+
+
+fn hash_password(password: &str) -> String {
+    bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
+}
+
+fn verify_password(password: &str, hashed_password: &str) -> bool {
+    bcrypt::verify(password, hashed_password).expect("Failed to verify password")
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50051".parse().unwrap();//grpc listening address
+    dotenv().ok();
+
+    let addr = "0.0.0.0:50051".parse().unwrap(); // gRPC listening address
 
     let database_url = "postgres://postgres:mysecretpassword@auth-service-db/postgres";
 
-    let (client, connection) =
-        tokio_postgres::connect(&database_url, NoTls).await?;
+    let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
@@ -67,27 +94,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             first_name VARCHAR(100),
             last_name VARCHAR(100),
             date DATE NOT NULL
-    )"#;
+        )"#;
 
-    client
-        .execute(table_creation_query, &[])
-        .await?;
+    client.execute(table_creation_query, &[]).await?;
 
-    let addUserQuery = format!(
+    let add_user_query = format!(
         r#"
             INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
             VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
-        "#, hash_password("8rud!")
+        "#,
+        hash_password("8rud!")
     );
 
-    client
-        .execute(addUserQuery.as_str(), &[]).await?;
+    client.execute(add_user_query.as_str(), &[]).await?;
 
     println!("Server listening on {}", addr);
     Server::builder()
-        .add_service(AuthServer::new(AuthService::default()))
+        .add_service(AuthServer::new(AuthService::new(client)))
         .serve(addr)
         .await?;
-    
+
     Ok(())
 }
