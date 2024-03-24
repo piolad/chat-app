@@ -1,10 +1,11 @@
 use tonic::{transport::Server, Request, Response, Status};
 use async_trait::async_trait;
 use redis::AsyncCommands;
-use active_sessions::{UserData, ActiveSessions};
+
+use active_sessions::{UserData, UserDataResponse, ActiveSessions};
 
 pub mod active_sessions {
-    tonic::include_proto!("active_sessions");
+    tonic::include_proto!("active-sessions");
 }
 
 
@@ -23,23 +24,25 @@ impl ActiveSessions for ActiveSessionsService {
         let session_token = generate_session_token();
         
         let redis_url = "redis://localhost:6379/"; 
-        let redis_client = redis::Client::open("redis_url").unwrap();
+        let redis_client = redis::Client::open(redis_url)?;
         let mut redis_con = redis_client.get_async_connection().await.unwrap();
 
         let _: () = redis_con.hset_multiple(
             &user_data.username,
             &[
+                ("username", &user_data.username),
                 ("email", &user_data.email),
                 ("key", &user_data.key),
-                ("locaion", &user_data.location),
+                ("location", &user_data.location),
                 ("session_token", &session_token),
             ]
         ).await.unwrap();
         
         //Returns token generated for the user 
-        Ok(Response::new(session_token))
-    }
+        Ok(Response::new(UserDataResponse(session_token)))
+    } // This is where the missing closing brace should be
 }
+
 
 
 fn generate_session_token() -> String {
