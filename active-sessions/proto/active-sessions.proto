@@ -1,0 +1,18 @@
+syntax = "proto3"; 
+package active-sessions;
+
+message UserData { 
+    string username = 1;
+    string email = 2; 
+    string key = 3; 
+    string location = 4; 
+} 
+
+message UserDataResponse{
+    string session_token = 1;
+}
+
+
+service ActiveSessions {
+    rpc AddUser (UserData) returns (UserDataResponse); 
+}
