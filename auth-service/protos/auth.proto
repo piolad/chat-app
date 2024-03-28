@@ -4,7 +4,7 @@ package auth;
 
 service Auth{
     rpc Login(LoginRequest) returns (LoginResponse);
-    //rpc Register(RegisterAttempt) returns (RegisterAttemptResponse);
+    rpc Register(RegisterRequest) returns (RegisterResponse);
 }
 
 message LoginRequest {
@@ -21,14 +21,18 @@ message LoginResponse {
     // loginRequestResult result = 1;
 }
 
-message RegisterAttempt {
-    string username = 1;
-    string email = 2;
-    string password = 3;
+message RegisterRequest {
+    string firstname = 1;
+    string lastname = 2;
+    string birthdate = 3;
+    string username = 4;
+    string email = 5;
+    string password = 6;
 }
 
-message RegisterAttemptResponse {
-    registerAttemptResult result = 1;
+message RegisterResponse {
+    string status = 1;
+    //registerAttemptResult result = 1;
 }
 
 enum loginRequestResult {
