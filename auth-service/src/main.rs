@@ -1,5 +1,4 @@
 use tonic::{transport::Server, Request, Response, Status};
-use std::env;
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
 use bcrypt::{hash, verify};
@@ -58,8 +57,34 @@ impl Auth for AuthService {
             return Err(Status::unauthenticated("Invalid credentials"));
         }
     }
-}
 
+    async fn register(
+        &self,
+        request: Request<proto::RegisterRequest>,
+    ) -> Result<Response<proto::RegisterResponse>, Status> {
+        let request = request.into_inner();
+        let firstname = request.firstname;
+        let lastname = request.lastname;
+
+        let email = request.email;
+        let username = request.username;
+        let hashed_password = hash_password(&request.password);
+
+        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
+        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
+            Ok(_) => {
+                let reply = proto::RegisterResponse {
+                    status: "Success".to_string(),
+                };
+                return Ok(Response::new(reply));
+            }
+            Err(e) => {
+                eprintln!("Error executing SQL query: {:?}", e);
+                return Err(Status::internal("Error executing SQL query"));
+            }
+        }
+    }
+}
 
 fn hash_password(password: &str) -> String {
     bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
@@ -93,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             hashed_password TEXT NOT NULL,
             first_name VARCHAR(100),
             last_name VARCHAR(100),
-            date DATE NOT NULL
+            date VARCHAR(250) NOT NULL
         )"#;
 
     client.execute(table_creation_query, &[]).await?;
