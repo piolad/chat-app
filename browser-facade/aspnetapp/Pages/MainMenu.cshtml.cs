@@ -31,6 +31,8 @@ namespace aspnetapp.Pages
             if(Username != "admin" || Password != "admin")
             {
                 ViewData["AlertMessage"] = "Invalid username or password. Please try again.";;
+            }else{
+                ViewData["AlertMessage"] = "Good work! Keep it up";
             }
 
             // Refresh the page to display the alert message

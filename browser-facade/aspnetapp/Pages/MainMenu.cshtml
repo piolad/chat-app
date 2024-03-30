@@ -9,7 +9,7 @@
 <head>
     <title>@ViewData["Title"]</title>
     <style>
-          body {
+        body {
             background-color: #0058DC;
             margin: 0;
             padding: 0;
@@ -24,7 +24,6 @@
             padding: 20px;
             border-radius: 10px;
         }
-
         .login-form {
             width: 500px;
             margin: auto;
@@ -34,23 +33,49 @@
             background-color: rgb(149, 206, 247);
             text-align: center;
         }
-
         .login-form input[type="text"],
         .login-form input[type="password"],
-        .login-form input[type="submit"],
         .forgot-password {
-            width: 100%;
+            width: calc(100% - 20px); /* Adjust width to accommodate padding */
             padding: 10px;
             margin: 8px 0;
             box-sizing: border-box;
         }
-
-        .forgot-password {
-            background: none;
+        .login-form input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
             border: none;
-            color: blue;
-            text-decoration: underline;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
             cursor: pointer;
+        }
+        .password-input {
+            width: calc(100% - 20px); /* Adjust width to accommodate padding */
+            box-sizing: border-box;
+            position: relative;
+            display: inline-block;
+        }
+        .password-input input[type="password"],
+        .password-input input[type="text"] {
+            width: 100%; /* Adjust width to accommodate the "Show" button */
+        }
+        .toggle-password {
+            position: absolute;
+            top: 9px;
+            right: 0;
+            bottom: 0;
+            width: 60px; /* Adjust button width */
+            height: 72%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        .forgot-password {
+            text-align: center; /* Align the "Forgot Password?" link to the left */
         }
     </style>
 </head>
@@ -59,21 +84,43 @@
         <h1>Welcome to Chat app</h1>
         <div class="login-form">
             <form method="post">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="Username" placeholder="Enter your username">
-
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="Password" placeholder="Enter your password">
-
+                <div>
+                    <label for="username">Username:</label>
+                    <br>
+                    <input type="text" id="username" name="Username" placeholder="Enter your username">
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <br>
+                    <div class="password-input">
+                        <input type="password" id="password" name="Password" placeholder="Enter your password">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">Show</button>
+                    </div>
+                </div>
+                <br>
                 <input type="submit" value="Login">
+                <br>
+                <p class="forgot-password">Forgot Password?</p>
             </form>
-            <p class="forgot-password">Forgot Password?</p>
-
             @if (ViewData["AlertMessage"] != null)
             {
                 <div class="alert">@ViewData["AlertMessage"]</div>
             }
         </div>
     </div>
+    <script>
+        function togglePasswordVisibility() {
+            var passwordInput = document.getElementById("password");
+            var toggleButton = document.querySelector(".toggle-password");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleButton.textContent = "Hide";
+            } else {
+                passwordInput.type = "password";
+                toggleButton.textContent = "Show";
+            }
+        }
+    </script>
 </body>
 </html>
