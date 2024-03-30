@@ -1,4 +1,5 @@
 @page
+@model aspnetapp.Pages.MainMenuModel
 @{
     ViewData["Title"] = "Main Menu";
 }
@@ -7,14 +8,72 @@
 <html>
 <head>
     <title>@ViewData["Title"]</title>
+    <style>
+          body {
+            background-color: #0058DC;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .centered-div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgb(149, 206, 247);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .login-form {
+            width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid rgb(149, 206, 247);
+            border-radius: 5px;
+            background-color: rgb(149, 206, 247);
+            text-align: center;
+        }
+
+        .login-form input[type="text"],
+        .login-form input[type="password"],
+        .login-form input[type="submit"],
+        .forgot-password {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+
+        .forgot-password {
+            background: none;
+            border: none;
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Main Menu</h1>
-    
-    <ul>
-        <li><a href="/SomePage">Link to Some Page</a></li>
-        <li><a href="/AnotherPage">Link to Another Page</a></li>
-        <!-- Add more menu items as needed -->
-    </ul>
+    <div class="centered-div">
+        <h1>Welcome to Chat app</h1>
+        <div class="login-form">
+            <form method="post">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="Username" placeholder="Enter your username">
+
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="Password" placeholder="Enter your password">
+
+                <input type="submit" value="Login">
+            </form>
+            <p class="forgot-password">Forgot Password?</p>
+
+            @if (ViewData["AlertMessage"] != null)
+            {
+                <div class="alert">@ViewData["AlertMessage"]</div>
+            }
+        </div>
+    </div>
 </body>
 </html>
