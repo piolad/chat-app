@@ -74,8 +74,19 @@
             border-radius: 0 5px 5px 0;
             cursor: pointer;
         }
-        .forgot-password {
-            text-align: center; /* Align the "Forgot Password?" link to the left */
+        .forgot-password,
+        .register {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .register{
+            margin-top: 0px;
         }
     </style>
 </head>
@@ -100,7 +111,8 @@
                 <br>
                 <input type="submit" value="Login">
                 <br>
-                <p class="forgot-password">Forgot Password?</p>
+                <button type="button" class="forgot-password" onclick="forgetPassword()">Forget Password</button>
+                <button type="button" class="register" onclick="register()">Register</button>
             </form>
             @if (ViewData["AlertMessage"] != null)
             {
@@ -120,6 +132,14 @@
                 passwordInput.type = "password";
                 toggleButton.textContent = "Show";
             }
+        }
+
+        function forgetPassword() {
+            alert("Please contact the administrator to reset your password.");
+        }
+
+        function register() {
+            window.location.href = "/Register";
         }
     </script>
 </body>
