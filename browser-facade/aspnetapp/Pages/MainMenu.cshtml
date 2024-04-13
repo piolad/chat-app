@@ -1,4 +1,5 @@
 @page
+@model aspnetapp.Pages.MainMenuModel
 @{
     ViewData["Title"] = "Main Menu";
 }
@@ -7,14 +8,139 @@
 <html>
 <head>
     <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            background-color: #0058DC;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .centered-div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgb(149, 206, 247);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .login-form {
+            width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid rgb(149, 206, 247);
+            border-radius: 5px;
+            background-color: rgb(149, 206, 247);
+            text-align: center;
+        }
+        .login-form input[type="text"],
+        .login-form input[type="password"],
+        .forgot-password {
+            width: calc(100% - 20px); /* Adjust width to accommodate padding */
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        .login-form input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .password-input {
+            width: calc(100% - 20px); /* Adjust width to accommodate padding */
+            box-sizing: border-box;
+            position: relative;
+            display: inline-block;
+        }
+        .password-input input[type="password"],
+        .password-input input[type="text"] {
+            width: 100%; /* Adjust width to accommodate the "Show" button */
+        }
+        .toggle-password {
+            position: absolute;
+            top: 9px;
+            right: 0;
+            bottom: 0;
+            width: 60px; /* Adjust button width */
+            height: 72%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        .forgot-password,
+        .register {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .register{
+            margin-top: 0px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Main Menu</h1>
-    
-    <ul>
-        <li><a href="/SomePage">Link to Some Page</a></li>
-        <li><a href="/AnotherPage">Link to Another Page</a></li>
-        <!-- Add more menu items as needed -->
-    </ul>
+    <div class="centered-div">
+        <h1>Welcome to Chat app</h1>
+        <div class="login-form">
+            <form method="post">
+                <div>
+                    <label for="username">Username:</label>
+                    <br>
+                    <input type="text" id="username" name="Username" placeholder="Enter your username">
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <br>
+                    <div class="password-input">
+                        <input type="password" id="password" name="Password" placeholder="Enter your password">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">Show</button>
+                    </div>
+                </div>
+                <br>
+                <input type="submit" value="Login">
+                <br>
+                <button type="button" class="forgot-password" onclick="forgetPassword()">Forget Password</button>
+                <button type="button" class="register" onclick="register()">Register</button>
+            </form>
+            @if (ViewData["AlertMessage"] != null)
+            {
+                <div class="alert">@ViewData["AlertMessage"]</div>
+            }
+        </div>
+    </div>
+    <script>
+        function togglePasswordVisibility() {
+            var passwordInput = document.getElementById("password");
+            var toggleButton = document.querySelector(".toggle-password");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleButton.textContent = "Hide";
+            } else {
+                passwordInput.type = "password";
+                toggleButton.textContent = "Show";
+            }
+        }
+
+        function forgetPassword() {
+            alert("Please contact the administrator to reset your password.");
+        }
+
+        function register() {
+            window.location.href = "/Register";
+        }
+    </script>
 </body>
 </html>
