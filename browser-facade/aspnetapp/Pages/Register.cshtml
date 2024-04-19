@@ -24,9 +24,55 @@
             padding: 20px;
             border-radius: 10px;
         }
+        .register-form {
+            width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid rgb(149, 206, 247);
+            border-radius: 5px;
+            background-color: rgb(149, 206, 247);
+            text-align: center;
+            height: auto;
+        }
+        .register-form input[type="text"],
+        .register-form input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        .register-form input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-
+    <div class="centered-div">
+        <h1 >Register</h1>
+        <div class="register-form">
+            <form method="post">
+                <label for="username">Username:</label><br>
+                <input type="text" id="username" name="username"><br>
+                <label for="email">Email:</label><br>
+                <input type="text" id="email" name="email"><br>
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="password"><br>
+                <label for="name">Name:</label><br>
+                <input type="text" id="name" name="name"><br>
+                <label for="surname">Surname:</label><br>
+                <input type="text" id="surname" name="surname"><br>
+                <label for="date">Date:</label><br>
+                <input type="text" id="date" name="date"><br>
+                <input type="submit" value="Register">
+            </form>
+        </div>
+    </div>
 </body>
 </html>
