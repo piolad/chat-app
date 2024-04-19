@@ -54,3 +54,7 @@ docker-compose logs -f
 ```bash
 dotnet watch run
 ```
+6. To see the file as md format
+```bash
+ctr+shift+v
+```
