@@ -7,11 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="protos\browser-facade.proto" GrpcServices="Server"/>
+    <Protobuf Include="protos\Greeter.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.26.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.62.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
