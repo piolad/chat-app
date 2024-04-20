@@ -1,9 +1,8 @@
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddGrpc();
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
 
