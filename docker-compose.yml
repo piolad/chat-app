@@ -24,11 +24,6 @@ services:
       context: ./browser-facade
     ports:
       - "5000:8080"
-  main-service:
-    build:
-      context: ./main-service
-    ports:
-      - "50050:50051"
     
 
 networks:

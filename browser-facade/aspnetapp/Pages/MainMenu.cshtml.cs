@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Grpc.Core;
 
 namespace aspnetapp.Pages
 {
@@ -31,32 +30,6 @@ namespace aspnetapp.Pages
                 ViewData["AlertMessage"] = "Good work! Keep it up";
             }
 
-            var channel = new Channel("localhost:50050", ChannelCredentials.Insecure);
-
-            var client = new BrowserFacade.BrowserFacadeClient(channel);
-
-            //We need to check if this is username or email
-
-            var request = new LoginCreds
-            {
-                // You can either set username or email based on your oneof definition
-                Username = Username,
-                Password = Password
-            };
-
-            var response = await client.LoginAsync(request);
-
-            if (response.Success)
-            {
-                Console.WriteLine("Login successful.");
-                Console.WriteLine($"Token: {response.Token}");
-                Console.WriteLine($"Username: {response.Username}");
-            }
-            else
-            {
-                Console.WriteLine($"Login failed: {response.Message}");
-            }
-            
             // Refresh the page to display the alert message
             return Page();
         }
