@@ -13,6 +13,6 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.10.2",
     "@grpc/proto-loader": "^0.7.10",
-    "winston": "^3.13.0"
+    "winston": "^3.3.3"
   }
 }
