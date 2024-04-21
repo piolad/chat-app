@@ -22,8 +22,12 @@ process.on('uncaughtException', (err) => {
 
 const protoPahts = [
   '../protos/browser-facade.proto',
-  '../protos/auth.proto'
+  '../protos/auth.proto',
 ]
+
+const packageDefinition1 = protoLoader.loadSync('../protos/Greeter.proto', {});
+const greeterProto = grpc.loadPackageDefinition(packageDefinition1).Greeter;
+
 const packageDefinition = protoLoader.loadSync(protoPahts , {
   keepCase: true,
   longs: String,
@@ -38,7 +42,9 @@ const BrowserFacadeService = loadedProtos.browserfacade.BrowserFacade.service;
 
 const client = new loadedProtos.auth.Auth('auth-service:50051', grpc.credentials.createInsecure());
 
-
+function sayHello(call, callback) {
+  callback(null, { message: 'Hello ' + call.request.name });
+}
 // function definitions
 function Login_toAuthService(username, password) {
   return new Promise((resolve, reject) => {
@@ -83,6 +89,7 @@ async function Login_fromBrowserFacade(call, callback) {
 const server = new grpc.Server();
 
 server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade });
+server.addService(greeterProto.Greeter.service, { SayHello: sayHello });
 //server.addService(AuthServiceService, { Login: Login_toAuthService });
 
 server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
