@@ -30,10 +30,10 @@ services:
   main-service:
     build:
       context: ./main-service
-    ports:
-      - "50050:50050"
     networks:
       - auth-network
+    ports:
+      - "50050:50050"
 
 networks:
   auth-network:
