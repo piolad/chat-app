@@ -1,11 +1,7 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const winston = require('winston');
-
 const util = require('util')
-
-
-
 
 
 const logger = winston.createLogger({
@@ -81,13 +77,16 @@ async function Login_fromBrowserFacade(call, callback) {
       token: '<TEMP TOKEN>',
        message: resp.status });
 
+
 }
 
 const server = new grpc.Server();
+
 server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade });
 //server.addService(AuthServiceService, { Login: Login_toAuthService });
 
 server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
   
   console.log('Server running at http://0.0.0.0:50051');
+
 });

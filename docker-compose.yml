@@ -1,4 +1,4 @@
-version: '3.8'
+version: '4.2'
 services:
   auth-service:
     build:
@@ -24,14 +24,18 @@ services:
       context: ./browser-facade
     ports:
       - "5000:8080"
+    networks:
+      - auth-network
+      
   main-service:
     build:
       context: ./main-service
     networks:
       - auth-network
     ports:
-      - "50050:50051"
-    
+      - "50050:50050"
+    networks:
+      - auth-network
 
 networks:
   auth-network:
