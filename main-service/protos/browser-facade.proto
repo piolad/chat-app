@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package browserfacade;
+
+service BrowserFacade {
+  rpc Login(LoginCreds) returns (LoginStatus) {}
+}
+
+message LoginCreds {
+    oneof loginData {
+        string username = 1;
+        string email = 2;
+    }
+    string password = 3;
+}
+
+message LoginStatus {
+    bool success = 1;
+    string message = 2;
+    string token = 3;
+    string username = 4;
+}
