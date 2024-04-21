@@ -27,6 +27,8 @@ services:
   main-service:
     build:
       context: ./main-service
+    networks:
+      - auth-network
     ports:
       - "50050:50051"
     
