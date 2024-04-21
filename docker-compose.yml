@@ -34,8 +34,6 @@ services:
       - auth-network
     ports:
       - "50050:50050"
-    networks:
-      - auth-network
 
 networks:
   auth-network:
