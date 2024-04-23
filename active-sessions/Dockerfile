@@ -1,7 +1,8 @@
 FROM rust
 
-RUN mkdir -p /home/app
+RUN mkdir -p /home/app 
 COPY . /home/app
 
+WORKDIR /home/app
 
-CMD [ "sh", "-c", "cd /home/app && cargo run" ]
+CMD ["cargo", "run"]
