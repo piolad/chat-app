@@ -1,4 +1,4 @@
-
+use tonic::{transport::Channel, Request, Response, Status};
 use active_sessions::{UserData, UserDataResponse, ActiveSessions};
 
 pub mod active_sessions {
@@ -18,11 +18,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             username: "Wiktor".to_owned(),
             email: "abc@gmail.com".to_owned(),
             key: "1234".to_owned(),
-            location: "Warsaw".to_owned(); 
+            location: "Warsaw".to_owned(), 
         }
     );
 
-    let resposne = client.add_user(request).await?; 
+    let response = client.add_user(request).await?; 
 
     println!("RESPONSE = {:?}", response); 
 
