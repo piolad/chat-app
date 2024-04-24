@@ -8,7 +8,6 @@ pub mod active_sessions {
     tonic::include_proto!("active-sessions");
 }
 
-
 #[derive(Default)]
 pub struct ActiveSessionsService;
 
@@ -23,9 +22,18 @@ impl ActiveSessions for ActiveSessionsService {
 
         let session_token = generate_session_token();
         
-        let redis_url = "redis://localhost:6379/"; 
-        let redis_client = redis::Client::open(redis_url)?;
-        let mut redis_con = redis_client.get_async_connection().await.unwrap();
+        let redis_url = "redis://redis:6379/";
+        let redis_client = redis::Client::open(redis_url)
+            .map_err(|e| {
+                eprintln!("Failed to connect to Redis: {:?}", e);
+                Status::internal("Failed to connect to Redis")
+            })?;
+
+        let mut redis_con = redis_client.get_async_connection().await
+            .map_err(|e| {
+                eprintln!("Failed to get Redis connection: {:?}", e);
+                Status::internal("Failed to get Redis connection")
+            })?;
 
         let _: () = redis_con.hset_multiple(
             &user_data.username,
@@ -36,11 +44,19 @@ impl ActiveSessions for ActiveSessionsService {
                 ("location", &user_data.location),
                 ("session_token", &session_token),
             ]
-        ).await.unwrap();
+        ).await 
+            .map_err(|e| {
+                eprintln!("Failed to set data in Redis: {:?}", e);
+                Status::internal("Failed to set data in Redis")
+            })?;
         
-        //Returns token generated for the user 
-        Ok(Response::new(UserDataResponse(session_token)))
-    } // This is where the missing closing brace should be
+        // this is done to correctly format the gRPC response
+        let response = UserDataResponse{
+            session_token: session_token.clone(),
+        }; 
+
+        Ok(Response::new(response))
+    } 
 }
 
 
