@@ -12,7 +12,6 @@ message UserDataResponse{
     string session_token = 1;
 }
 
-
 service ActiveSessions {
     rpc AddUser (UserData) returns (UserDataResponse); 
 }
