@@ -8,6 +8,20 @@ services:
     networks:
       - auth-network
 
+  active-sessions:
+    build: ./active-sessions 
+    ports: 
+      - "8001:8001"
+    depends_on: 
+      - redis 
+    enviroment: 
+      - REDIS_URL=redis://redis:6379 
+  
+  redis: 
+    image: redis:latest 
+    ports: 
+      - "6378:6379"
+
   auth-service-db:
     image: postgres:latest
     environment:
@@ -15,14 +29,15 @@ services:
     networks:
       - auth-network
     ports:
-      - "5001:5432"
+      - "5001:5432" 
 
   browser-facade:
     build:
       context: ./browser-facade
     ports:
       - "5000:8080"
-    
+
+
 
 networks:
   auth-network:
