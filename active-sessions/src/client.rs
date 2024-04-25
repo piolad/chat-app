@@ -7,7 +7,7 @@ pub mod active_sessions {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let channel = Channel::from_static("http://[::1]:50051")
+    let channel = Channel::from_static("http://[::1]:50052")
         .connect()
         .await?;
 

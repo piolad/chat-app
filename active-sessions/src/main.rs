@@ -71,7 +71,7 @@ fn generate_session_token() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let addr = "[::1]:50052".parse()?;
     let active_sessions_service = ActiveSessionsService::default();
 
     Server::builder()
