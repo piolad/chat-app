@@ -50,3 +50,11 @@ docker-compose down --rmi local --volumes
 ```bash
 docker-compose logs -f
 ```
+5. To run aspnet app withouot docker, with hot changes in html
+```bash
+dotnet watch run
+```
+6. To see the file as md format
+```bash
+ctr+shift+v
+```
