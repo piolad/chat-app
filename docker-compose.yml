@@ -48,7 +48,7 @@ services:
       - "50050:50050"
     networks:
       - auth-network
-      
-  networks:
-    auth-network:
-      driver: bridge
+    
+networks:
+  auth-network:
+    driver: bridge
