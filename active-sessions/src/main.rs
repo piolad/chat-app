@@ -1,12 +1,17 @@
 use tonic::{transport::Server, Request, Response, Status};
+
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+
 use async_trait::async_trait;
 use redis::AsyncCommands;
-
-use active_sessions::{UserData, UserDataResponse, ActiveSessions};
 
 pub mod active_sessions {
     tonic::include_proto!("active-sessions");
 }
+
+use active_sessions::{UserData, UserDataResponse, ActiveSessions};
+
 
 #[derive(Default)]
 pub struct ActiveSessionsService;
@@ -63,8 +68,6 @@ impl ActiveSessions for ActiveSessionsService {
 
 fn generate_session_token() -> String {
     //random token generation 
-    use rand::distributions::Alphanumeric;
-    use rand::{thread_rng, Rng};
     thread_rng().sample_iter(&Alphanumeric).take(30).collect()
 }
 
@@ -75,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let active_sessions_service = ActiveSessionsService::default();
 
     Server::builder()
-        .add_service(ActiveSessionsServer::new(active_sessions_service))
+        .add_service(ActiveSessionsService::new(active_sessions_service))
         .serve(addr)
         .await?;
     Ok(())

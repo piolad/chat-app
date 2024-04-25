@@ -1,9 +1,11 @@
 use tonic::{transport::Channel, Request, Response, Status};
-use active_sessions::{UserData, UserDataResponse, ActiveSessions};
 
 pub mod active_sessions {
     tonic::include_proto!("active-sessions");
 }
+
+use active_sessions::{UserData, UserDataResponse, ActiveSessions};
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
