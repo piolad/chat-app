@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package browserfacade;
+package BrowserFacade;
 
 service BrowserFacade {
   rpc Login(LoginCreds) returns (LoginStatus) {}
