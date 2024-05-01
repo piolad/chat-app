@@ -51,6 +51,8 @@ impl Auth for AuthService {
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
+                token: "token".to_string(),     //has to be changed
+                idsession: "idsession".to_string(), //has to be changed
             };
             return Ok(Response::new(reply));
         } else {

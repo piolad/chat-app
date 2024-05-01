@@ -52,33 +52,35 @@ function Login_toAuthService(username, password) {
   };
 
   client.login(request, (error, response) => {
-    if (!error) {
-      console.log('Login Response:', response);
+    if (error) {
+      logger.error(`Error from authentication service: ${error.message}`);
+      reject(error); // Reject the Promise with the error
     } else {
-      console.error('Error:', error.message);
+      logger.info('Login Response:', response);
+      logger.info(`Login status: ${response.status}`);
+      resolve(response); // Resolve the Promise with the response
     }
-    console.log('Login status:', response.status);
-
-    logger.info (`A ${(util.inspect(response, {depth: null}))}`)
-
-
-    resolve(response);
   });
 });
 
 }
 
 async function Login_fromBrowserFacade(call, callback) {
+  logger.info(`Login request received from ${util.inspect(call.request, {depth: null})}`);
 
-  logger.info (`Login request received from ${(util.inspect(call.request, {depth: null}))}`);
-  //logger.info(`Login request received from ${call.request}`);
-  const resp  = await Login_toAuthService(call.request.username, call.request.password)
-
-  logger.info (`B ${(util.inspect(resp, {depth: null}))}`)
-    callback(null, { success: resp.status == 'Success',
+  try {
+    const resp = await Login_toAuthService(call.request.username, call.request.password);
+    logger.info(`B ${util.inspect(resp, {depth: null})}`);
+    callback(null, {
+      success: resp.status == 'Success',
       username: call.request.username,
       token: '<TEMP TOKEN>',
-       message: resp.status });
+      message: resp.status
+    });
+  } catch (error) {
+    logger.error(`Error occurred during login: ${error.message}`);
+    callback(error, null); // Sending error response to the client
+  }
 }
 
 const server = new grpc.Server();

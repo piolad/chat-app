@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Grpc.Net.Client;
+using Grpc.Core;
 using BrowserFacade;
 
 namespace aspnetapp.Pages
@@ -50,10 +51,15 @@ namespace aspnetapp.Pages
                     ViewData["AlertMessage"] = "Invalid username or password. Please try again.";
                 }
             }
+            catch (RpcException ex)
+            {
+                _logger.LogError($"Error code: {ex.StatusCode}. Message: {ex.Status.Detail}");
+                ViewData["AlertMessage"] = $"Error code: {ex.StatusCode}. Message: {ex.Status.Detail}";
+            }       
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing the gRPC request.");
-                ViewData["AlertMessage"] = "An error occurred while processing your request. Please try again later.";
+                _logger.LogError(ex, "An unexpected error occurred.");
+                ViewData["AlertMessage"] = $"An unexpected error occurred. Please try again later.";
             }
 
             // Refresh the page to display the alert message
