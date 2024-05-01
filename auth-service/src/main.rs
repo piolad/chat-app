@@ -1,8 +1,10 @@
 use tonic::{transport::Server, Request, Response, Status};
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
-use bcrypt::{hash, verify};
+//use bcrypt::{hash, verify};
 use proto::auth_server::{Auth, AuthServer};
+use rand::{Rng, thread_rng};
+use rand::distributions::Alphanumeric;
 
 mod proto {
     tonic::include_proto!("auth");
@@ -17,6 +19,15 @@ impl AuthService {
     fn new(client: tokio_postgres::Client) -> Self {
         Self { client }
     }
+}
+
+fn generate_token(length: usize) -> String {
+    let rng = thread_rng();
+    let token: String = rng.sample_iter(&Alphanumeric)
+        .take(length)
+        .map(|c| c as char) // Convert each u8 to char
+        .collect(); // Collect characters into a String
+    token
 }
 
 #[tonic::async_trait]
@@ -51,6 +62,8 @@ impl Auth for AuthService {
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
+                token: generate_token(32).to_string(),
+                idsession: "idsession".to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
         } else {
