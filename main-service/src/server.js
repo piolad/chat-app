@@ -74,7 +74,7 @@ async function Login_fromBrowserFacade(call, callback) {
     callback(null, {
       success: resp.status == 'Success',
       username: call.request.username,
-      token: '<TEMP TOKEN>',
+      token: resp.token,
       message: resp.status
     });
   } catch (error) {
