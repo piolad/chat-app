@@ -25,6 +25,8 @@ const protoPahts = [
   '../protos/auth.proto',
 ]
 
+// const packageDefinition1 = protoLoader.loadSync('../protos/Greeter.proto', {});
+// const greeterProto = grpc.loadPackageDefinition(packageDefinition1).Greeter;
 
 const packageDefinition = protoLoader.loadSync(protoPahts , {
   keepCase: true,
