@@ -63,24 +63,26 @@ function Login_toAuthService(username, password) {
 }
 
 function Register_toAuthService(firstname, lastname, birthdate, username, email, password) {
-  let request = {
-    firstname: firstname,
-    lastname: lastname,
-    birthdate: birthdate,
-    username: username,
-    email: email,
-    password: password
-  };
+  return new Promise((resolve, reject) => {
+    let request = {
+      firstname: firstname,
+      lastname: lastname,
+      birthdate: birthdate,
+      username: username,
+      email: email,
+      password: password
+    };
 
-  client.register(request, (error, response) => {
-    if (error) {
-      logger.error(`Error from authentication service: ${error.message}`);
-      return error; // Reject the Promise with the error
-    } else {
-      logger.info('Register Response:', response);
-      logger.info(`Register status: ${response.status}`);
-      return response; // Resolve the Promise with the response
-    }
+    client.register(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from authentication service: ${error.message}`);
+        reject(error); // Reject the Promise with the error
+      } else {
+        logger.info('Register Response:', response);
+        logger.info(`Register status: ${response.status}`);
+        resolve(response); // Resolve the Promise with the response
+      }
+    });
   });
 }
 
@@ -110,7 +112,6 @@ async function Register_fromBrowserFacade(call, callback) {
     logger.info(`B ${util.inspect(resp, {depth: null})}`);
     callback(null, {
       success: resp.status == 'Success',
-      username: call.request.username,
       message: resp.status
     });
   } catch (error) {
@@ -120,7 +121,6 @@ async function Register_fromBrowserFacade(call, callback) {
 }
 
 const server = new grpc.Server();
-//server.addService(BrowserFacadeService, { Register: Register_fromBrowserFacade });
 server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade, Register: Register_fromBrowserFacade });
 server.bindAsync('0.0.0.0:50050', grpc.ServerCredentials.createInsecure(), () => {
   console.log('Server running at 0.0.0.0:50050');

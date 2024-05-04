@@ -3,7 +3,8 @@ syntax = "proto3";
 package BrowserFacade;
 
 service BrowserFacade {
-  rpc Login(LoginCreds) returns (LoginStatus) {}
+    rpc Login(LoginCreds) returns (LoginStatus) {}
+    rpc Register(RegisterCreds) returns (RegisterStatus) {}
 }
 
 message LoginCreds {
@@ -19,4 +20,18 @@ message LoginStatus {
     string message = 2;
     string token = 3;
     string username = 4;
+}
+
+message RegisterCreds {
+    string firstname = 1;
+    string lastname = 2;
+    string birthdate = 3;
+    string email = 4;
+    string username = 5;
+    string password = 6;
+}
+
+message RegisterStatus {
+    bool success = 1;
+    string message = 2;
 }
