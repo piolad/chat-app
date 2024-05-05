@@ -58,20 +58,24 @@
         <h1 >Register</h1>
         <div class="register-form">
             <form method="post">
-                <label for="username">Username:</label><br>
-                <input type="text" id="username" name="username"><br>
-                <label for="email">Email:</label><br>
-                <input type="text" id="email" name="email"><br>
-                <label for="password">Password:</label><br>
-                <input type="password" id="password" name="password"><br>
-                <label for="name">Name:</label><br>
-                <input type="text" id="name" name="name"><br>
-                <label for="surname">Surname:</label><br>
-                <input type="text" id="surname" name="surname"><br>
-                <label for="date">Date:</label><br>
-                <input type="text" id="date" name="date"><br>
+                <label for="Username">Username:</label><br>
+                <input type="text" id="Username" name="Username"><br>
+                <label for="Email">Email:</label><br>
+                <input type="text" id="Email" name="Email"><br>
+                <label for="Password">Password:</label><br>
+                <input type="password" id="Password" name="Password"><br>
+                <label for="FirstName">FirstName:</label><br>
+                <input type="text" id="FirstName" name="FirstName"><br>
+                <label for="LastName">LastName:</label><br>
+                <input type="text" id="LastName" name="LastName"><br>
+                <label for="BirthDate">BirthDate:</label><br>
+                <input type="text" id="BirthDate" name="BirthDate"><br>
                 <input type="submit" value="Register">
             </form>
+             @if (ViewData["AlertMessage"] != null)
+            {
+                <div class="alert">@ViewData["AlertMessage"]</div>
+            }
         </div>
     </div>
 </body>

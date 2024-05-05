@@ -25,8 +25,6 @@ const protoPahts = [
   '../protos/auth.proto',
 ]
 
-// const packageDefinition1 = protoLoader.loadSync('../protos/Greeter.proto', {});
-// const greeterProto = grpc.loadPackageDefinition(packageDefinition1).Greeter;
 
 const packageDefinition = protoLoader.loadSync(protoPahts , {
   keepCase: true,
@@ -46,23 +44,46 @@ const client = new loadedProtos.auth.Auth('auth-service:50051', grpc.credentials
 function Login_toAuthService(username, password) {
   return new Promise((resolve, reject) => {
 
-  let request = {
-    username: username,
-    password: password
-  };
+    let request = {
+      username: username,
+      password: password
+    };
 
-  client.login(request, (error, response) => {
-    if (error) {
-      logger.error(`Error from authentication service: ${error.message}`);
-      reject(error); // Reject the Promise with the error
-    } else {
-      logger.info('Login Response:', response);
-      logger.info(`Login status: ${response.status}`);
-      resolve(response); // Resolve the Promise with the response
-    }
+    client.login(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from authentication service: ${error.message}`);
+        reject(error); // Reject the Promise with the error
+      } else {
+        logger.info('Login Response:', response);
+        logger.info(`Login status: ${response.status}`);
+        resolve(response); // Resolve the Promise with the response
+      }
+    });
   });
-});
+}
 
+function Register_toAuthService(firstname, lastname, birthdate, username, email, password) {
+  return new Promise((resolve, reject) => {
+    let request = {
+      firstname: firstname,
+      lastname: lastname,
+      birthdate: birthdate,
+      username: username,
+      email: email,
+      password: password
+    };
+
+    client.register(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from authentication service: ${error.message}`);
+        reject(error); // Reject the Promise with the error
+      } else {
+        logger.info('Register Response:', response);
+        logger.info(`Register status: ${response.status}`);
+        resolve(response); // Resolve the Promise with the response
+      }
+    });
+  });
 }
 
 async function Login_fromBrowserFacade(call, callback) {
@@ -83,9 +104,24 @@ async function Login_fromBrowserFacade(call, callback) {
   }
 }
 
+async function Register_fromBrowserFacade(call, callback) {
+  logger.info(`Register request received from ${util.inspect(call.request, {depth: null})}`);
+
+  try {
+    const resp = await Register_toAuthService(call.request.firstname, call.request.lastname, call.request.birthdate, call.request.username, call.request.email, call.request.password);
+    logger.info(`B ${util.inspect(resp, {depth: null})}`);
+    callback(null, {
+      success: resp.status == 'Success',
+      message: resp.status
+    });
+  } catch (error) {
+    logger.error(`Error occurred during register: ${error.message}`);
+    callback(error, null); // Sending error response to the client
+  }
+}
+
 const server = new grpc.Server();
-server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade });
-// server.addService(greeterProto.Greeter.service, { SayHello: sayHello });
+server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade, Register: Register_fromBrowserFacade });
 server.bindAsync('0.0.0.0:50050', grpc.ServerCredentials.createInsecure(), () => {
   console.log('Server running at 0.0.0.0:50050');
 });
