@@ -92,6 +92,11 @@ impl Auth for AuthService {
                 return Ok(Response::new(reply));
             }
             Err(e) => {
+                if e.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
+                    // Assuming there's only one unique constraint for both email and username
+                    let error_msg = format!("User with email '{}' or username '{}' already exists", email, username);
+                    return Err(Status::already_exists(error_msg));
+                }
                 eprintln!("Error executing SQL query: {:?}", e);
                 return Err(Status::internal("Error executing SQL query"));
             }
