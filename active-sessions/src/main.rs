@@ -4,6 +4,7 @@ use rand::{thread_rng, Rng};
 use async_trait::async_trait;
 use redis::AsyncCommands;
 
+
 pub mod active_sessions {
     tonic::include_proto!("active_sessions");
 }
