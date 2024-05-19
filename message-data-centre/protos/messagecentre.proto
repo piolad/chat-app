@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/piolad/chat-app/message-data-centre/protos";
+
+package messagecentre;
+
+service MessageCentre {
+  rpc CreateChat (ChatInfo) returns (ChatCreationResponse) {}
+}
+
+message ChatInfo {
+  string name = 1;
+  string description = 2;
+}
+
+message ChatCreationResponse {
+  string chat_id = 1;
+}
