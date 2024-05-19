@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "log"
 
 func main() {
-	fmt.Println("Witaj, świecie! Jestem aplikacją Go w folderze message-data-center.")
+	log.Println("Starting message data centre")
 }

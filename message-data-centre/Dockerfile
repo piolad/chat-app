@@ -1,10 +1,10 @@
 FROM golang:latest
 
-WORKDIR /go/src/app
+WORKDIR /app
 
-COPY . .
+COPY go.mod .
+COPY main.go .
 
-RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go build -o bin .
 
-CMD ["app"]
+ENTRYPOINT [ "/app/bin" ]
