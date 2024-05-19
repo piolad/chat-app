@@ -71,6 +71,8 @@ impl Auth for AuthService {
         }
     }
 
+    // dodanie tworzenia tokenu odszyfrowującego wiadomości przy rejestracji dodanie pola do bazy danych
+
     async fn register(
         &self,
         request: Request<proto::RegisterRequest>,
