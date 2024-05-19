@@ -1,1 +1,2 @@
-start.ps1
+browser-facade/aspnetapp/bin/*
+browser-facade/aspnetapp/obj/*
