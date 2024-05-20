@@ -1,32 +1,29 @@
-FROM golang:latest
+# Use the official Golang image to create a build artifact.
+FROM golang:latest as builder
 
-# Install the Protocol Buffers compiler
-RUN apt-get update && apt-get install -y protobuf-compiler
-
-# Install the protoc-gen-go plugin
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-# Set the working directory
+# Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy the Go modules files
-COPY go.mod .
-COPY go.sum .
+# Copy go mod and sum files
+COPY go.mod go.sum ./
 
-# Install dependencies
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
 
-# Copy the main.go file
-COPY main.go .
+# Copy the source from the current directory to the Working Directory inside the container
+COPY . .
 
-# Copy the .proto file
-COPY protos/*.proto ./protos/
+# Build the Go app
+RUN go build -o main ./server
 
-# Generate Go code from the .proto file
-RUN protoc --go_out=. --go_opt=paths=source_relative ./protos/messagecentre.proto
+# Start a new stage with a compatible GLIBC version
+FROM debian:stable-slim
 
-# Build the Go application
-RUN go build -o bin/main .
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Set the command to run when the container starts
-CMD ["/app/bin/main"]
+# Copy the Pre-built binary file from the previous stage
+COPY --from=builder /app/main /app/main
+
+# Command to run the executable
+ENTRYPOINT ["/app/main"]
