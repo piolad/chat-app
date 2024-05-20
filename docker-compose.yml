@@ -57,6 +57,21 @@ services:
       - "50052:50051"
     networks:
       - auth-network
+
+  message-data-centre-db:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: adminUser
+      MONGO_INITDB_ROOT_PASSWORD: adminPassword
+    volumes:
+      - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+    depends_on:
+      - message-data-centre
+    networks:
+      - auth-network
     
 networks:
   auth-network:
