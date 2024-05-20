@@ -1,7 +1,6 @@
-// init-mongo.js
-
 db = db.getSiblingDB('admin');
 
+// Create adminUser with root role
 db.createUser({
   user: 'adminUser',
   pwd: 'adminPassword',
