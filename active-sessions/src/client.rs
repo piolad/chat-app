@@ -2,6 +2,7 @@ use tonic::{transport::Channel, Request, Response, Status};
 
 pub mod active_sessions {
     tonic::include_proto!("active_sessions");
+    tonic::include_proto!("active_sessions");
 }
 
 use active_sessions::{UserData, UserDataResponse};
@@ -12,6 +13,7 @@ use active_sessions::{UserData, UserDataResponse, ActiveSessions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let channel = Channel::from_static("http://127.0.0.1:50052")
     let channel = Channel::from_static("http://127.0.0.1:50052")
         .connect()
         .await?;
@@ -28,8 +30,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let response = client.add_user(request).await?;
+    let response = client.add_user(request).await?;
 
     println!("RESPONSE = {:?}", response);
 
     Ok(())
 }
+
