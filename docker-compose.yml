@@ -22,7 +22,7 @@ services:
   redis: 
     image: redis:latest 
     ports: 
-      - "6378:6379"
+      - "6379:6379"
 
   auth-service-db:
     image: postgres:latest
