@@ -9,6 +9,7 @@ use active_sessions::active_sessions_client::ActiveSessionsClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+   
     println!("TEST BEFORE CONECTION TO CHANNEL");
     let channel = Channel::from_static("http://localhost:50052")
         .connect()
