@@ -1,10 +1,11 @@
-// Greeter.proto
 syntax = "proto3";
 
-package Greeter;
+package service;
+
+option go_package = "/proto;proto";
 
 service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply);
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
 }
 
 message HelloRequest {

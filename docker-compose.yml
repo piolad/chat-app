@@ -1,23 +1,23 @@
 version: '4.2'
 services:
-  auth-service:
-    build:
-      context: ./auth-service
-    depends_on:
-      - auth-service-db
-    networks:
-      - auth-network
-    ports:
-      - "50051:50051"
+  # auth-service:
+  #   build:
+  #     context: ./auth-service
+  #   depends_on:
+  #     - auth-service-db
+  #   networks:
+  #     - auth-network
+  #   ports:
+  #     - "50051:50051"
 
-  auth-service-db:
-    image: postgres:latest
-    environment:
-      POSTGRES_PASSWORD: mysecretpassword
-    networks:
-      - auth-network
-    ports:
-      - "5001:5432" 
+  # auth-service-db:
+  #   image: postgres:latest
+  #   environment:
+  #     POSTGRES_PASSWORD: mysecretpassword
+  #   networks:
+  #     - auth-network
+  #   ports:
+  #     - "5001:5432" 
 
   # active-sessions:
   #   build: ./active-sessions 
@@ -34,19 +34,42 @@ services:
   #   ports: 
   #     - "6378:6379"
 
-  browser-facade:
+  # browser-facade:
+  #   build:
+  #     context: ./browser-facade
+  #   ports:
+  #     - "5000:8080"
+  #   networks:
+  #     - auth-network
+      
+  # main-service:
+  #   build:
+  #     context: ./main-service
+  #   ports:
+  #     - "50050:50050"
+  #   networks:
+  #     - auth-network
+
+  message-data-centre:
     build:
-      context: ./browser-facade
+      context: ./message-data-centre
     ports:
-      - "5000:8080"
+      - "50052:50051"
     networks:
       - auth-network
-      
-  main-service:
-    build:
-      context: ./main-service
+
+  message-data-centre-db:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: adminUser
+      MONGO_INITDB_ROOT_PASSWORD: adminPassword
+    volumes:
+      - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
     ports:
-      - "50050:50050"
+      - "27017:27017"
+    depends_on:
+      - message-data-centre
     networks:
       - auth-network
     
