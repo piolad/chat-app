@@ -1,28 +1,28 @@
 version: '4.2'
 services:
   auth-service-db:
-  image: postgres:latest
-  environment:
-    POSTGRES_PASSWORD: mysecretpassword
-  networks:
-    - auth-network
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    networks:
+      - auth-network
     ports:
-      - "5001:5432" 
+      - "5001:5432"
 
   active-sessions:
-    build: ./active-sessions 
-    ports: 
+    build: ./active-sessions
+    ports:
       - "50052:50052"
-    depends_on: 
-      - redis 
-    environment: 
-      - REDIS_URL=redis://redis:6379 
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
     networks:
       - active-sessions-network
   
-  redis: 
-    image: redis:latest 
-    ports: 
+  redis:
+    image: redis:latest
+    ports:
       - "6379:6379"
     networks:
       - active-sessions-network
@@ -44,7 +44,6 @@ services:
       - auth-network
 
 networks:
-  active-sessions-network: 
-    auth-network: 
-      driver: bridge
-
+  active-sessions-network:
+  auth-network:
+    driver: bridge
