@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package BrowserFacade;
+
+service BrowserFacade {
+    rpc Login(LoginCreds) returns (LoginStatus) {}
+    rpc Register(RegisterCreds) returns (RegisterStatus) {}
+}
+
+message LoginCreds {
+    oneof loginData {
+        string username = 1;
+        string email = 2;
+    }
+    string password = 3;
+}
+
+message LoginStatus {
+    bool success = 1;
+    string message = 2;
+    string token = 3;
+    string username = 4;
+}
+
+message RegisterCreds {
+    string firstname = 1;
+    string lastname = 2;
+    string birthdate = 3;
+    string email = 4;
+    string username = 5;
+    string password = 6;
+}
+
+message RegisterStatus {
+    bool success = 1;
+    string message = 2;
+}

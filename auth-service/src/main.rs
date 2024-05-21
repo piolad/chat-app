@@ -1,8 +1,10 @@
 use tonic::{transport::Server, Request, Response, Status};
 use tokio_postgres::NoTls;
 use dotenv::dotenv;
-use bcrypt::{hash, verify};
+//use bcrypt::{hash, verify};
 use proto::auth_server::{Auth, AuthServer};
+use rand::{Rng, thread_rng};
+use rand::distributions::Alphanumeric;
 
 mod proto {
     tonic::include_proto!("auth");
@@ -17,6 +19,15 @@ impl AuthService {
     fn new(client: tokio_postgres::Client) -> Self {
         Self { client }
     }
+}
+
+fn generate_token(length: usize) -> String {
+    let rng = thread_rng();
+    let token: String = rng.sample_iter(&Alphanumeric)
+        .take(length)
+        .map(|c| c as char) // Convert each u8 to char
+        .collect(); // Collect characters into a String
+    token
 }
 
 #[tonic::async_trait]
@@ -51,13 +62,15 @@ impl Auth for AuthService {
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
+                token: generate_token(32).to_string(),
+                idsession: "idsession".to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
         } else {
             return Err(Status::unauthenticated("Invalid credentials"));
         }
     }
-
+    
     async fn register(
         &self,
         request: Request<proto::RegisterRequest>,
@@ -69,9 +82,10 @@ impl Auth for AuthService {
         let email = request.email;
         let username = request.username;
         let hashed_password = hash_password(&request.password);
+        let key = generate_token(32);
 
-        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
-        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
+        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key) VALUES ($1, $2, $3, $4, $5, $6, $7)"#;
+        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate, &key]).await {
             Ok(_) => {
                 let reply = proto::RegisterResponse {
                     status: "Success".to_string(),
@@ -79,6 +93,11 @@ impl Auth for AuthService {
                 return Ok(Response::new(reply));
             }
             Err(e) => {
+                if e.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
+                    // Assuming there's only one unique constraint for both email and username
+                    let error_msg = format!("User with email '{}' or username '{}' already exists", email, username);
+                    return Err(Status::already_exists(error_msg));
+                }
                 eprintln!("Error executing SQL query: {:?}", e);
                 return Err(Status::internal("Error executing SQL query"));
             }
@@ -118,17 +137,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             hashed_password TEXT NOT NULL,
             first_name VARCHAR(100),
             last_name VARCHAR(100),
-            date VARCHAR(250) NOT NULL
+            date VARCHAR(250) NOT NULL,
+            key VARCHAR(250) NOT NULL
         )"#;
 
     client.execute(table_creation_query, &[]).await?;
 
     let add_user_query = format!(
         r#"
-            INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
-            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
+            INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key)
+            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01','{}')
         "#,
-        hash_password("8rud!")
+        hash_password("8rud!"), generate_token(32)
     );
 
     client.execute(add_user_query.as_str(), &[]).await?;

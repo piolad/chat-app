@@ -1,5 +1,15 @@
 version: '4.2'
 services:
+  auth-service:
+    build:
+      context: ./auth-service
+    depends_on:
+      - auth-service-db
+    networks:
+      - auth-network
+    ports:
+      - "50051:50051"
+
   auth-service-db:
     image: postgres:latest
     environment:
@@ -7,25 +17,22 @@ services:
     networks:
       - auth-network
     ports:
-      - "5001:5432"
+      - "5001:5432" 
 
   active-sessions:
-    build: ./active-sessions
-    ports:
-      - "50052:50052"
-    depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379
-    networks:
-      - active-sessions-network
+    build: ./active-sessions 
+    ports: 
+      - "8001:8001"
+      - "50053:50052"
+    depends_on: 
+      - redis 
+    environment: 
+      - REDIS_URL=redis://redis:6379 
   
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    networks:
-      - active-sessions-network
+  redis: 
+    image: redis:latest 
+    ports: 
+      - "6378:6379"
 
   browser-facade:
     build:
@@ -43,7 +50,29 @@ services:
     networks:
       - auth-network
 
+  message-data-centre:
+    build:
+      context: ./message-data-centre
+    ports:
+      - "50052:50051"
+    networks:
+      - auth-network
+
+  message-data-centre-db:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: adminUser
+      MONGO_INITDB_ROOT_PASSWORD: adminPassword
+    volumes:
+      - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+    depends_on:
+      - message-data-centre
+    networks:
+      - auth-network
+    
 networks:
-  active-sessions-network:
   auth-network:
     driver: bridge

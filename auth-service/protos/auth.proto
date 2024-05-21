@@ -17,6 +17,8 @@ message LoginRequest {
 
 message LoginResponse {
     string status = 1;
+    string token = 2;
+    string idsession = 3;
     // loginRequestResult result = 1;
 }
 

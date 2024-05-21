@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Grpc.Net.Client;
-using Greeter; // Import the correct namespace
+using Grpc.Core;
+using BrowserFacade;
 
 namespace aspnetapp.Pages
 {
@@ -25,34 +26,40 @@ namespace aspnetapp.Pages
         {
             try
             {
+                if(string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+                {
+                    ViewData["AlertMessage"] = "Please enter a username and password.";
+                    return Page();
+                }
+
                 _logger.LogInformation("Login submitted with Username: {Username}, Password: {Password}", Username, Password);
                 
-                if(Username != "admin" || Password != "admin")
+                using var channel = GrpcChannel.ForAddress("http://main-service:50050");
+                var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
+                var request = new LoginCreds { Username = Username, Password = Password };
+
+                var response = client.Login(request);
+
+                _logger.LogInformation("Login response: {Response}", response);
+
+                if(response.Success)
                 {
-                    ViewData["AlertMessage"] = "Invalid username or password. Please try again.";
+                    ViewData["AlertMessage"] = "Login successful!";
                 }
                 else
                 {
-                    // Create an insecure gRPC channel
-                    using var channel = GrpcChannel.ForAddress("http://main-service:50050");
-                    
-                    // Create a gRPC client
-                    var client = new Greeter.Greeter.GreeterClient(channel);
-                    
-                    // Create a request message
-                    var request = new HelloRequest { Name = Username };
-                    
-                    // Call the gRPC service
-                    var response = client.SayHello(request);
-                    
-                    // Display the response message
-                    ViewData["AlertMessage"] = response.Message;
+                    ViewData["AlertMessage"] = "Invalid username or password. Please try again.";
                 }
             }
+            catch (RpcException ex)
+            {
+                _logger.LogError($"Error code: {ex.StatusCode}. Message: {ex.Status.Detail}");
+                ViewData["AlertMessage"] = $"Error code: {ex.StatusCode}. Message: {ex.Status.Detail}";
+            }       
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing the gRPC request.");
-                ViewData["AlertMessage"] = "An error occurred while processing your request. Please try again later.";
+                _logger.LogError(ex, "An unexpected error occurred.");
+                ViewData["AlertMessage"] = $"An unexpected error occurred. Please try again later.";
             }
 
             // Refresh the page to display the alert message
