@@ -32,6 +32,9 @@ namespace aspnetapp.Pages
         public IActionResult  OnPost(){
             try
             {
+                //TODO - need to add a validation for the date
+
+
                 //_logger.LogInformation("Starts with: {FirstName}, LastName: {LastName}, BirthDate: {BirthDate}, Email: {Email}, Username: {Username}, Password: {Password}", FirstName, LastName, BirthDate, Email, Username, Password);
                 if(string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) || string.IsNullOrWhiteSpace(BirthDate) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
                 {
