@@ -29,10 +29,10 @@ services:
   #   environment: 
   #     - REDIS_URL=redis://redis:6379 
   
-  # redis: 
-  #   image: redis:latest 
-  #   ports: 
-  #     - "6378:6379"
+  redis: 
+    image: redis:latest 
+    ports: 
+      - "6378:6379"
 
   browser-facade:
     build:
