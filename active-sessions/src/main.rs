@@ -1,17 +1,15 @@
 use tonic::{transport::Server, Request, Response, Status};
-
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-
 use async_trait::async_trait;
 use redis::AsyncCommands;
 
 pub mod active_sessions {
-    tonic::include_proto!("active-sessions");
+    tonic::include_proto!("active_sessions");
 }
 
-use active_sessions::{UserData, UserDataResponse, ActiveSessions};
-
+use active_sessions::{UserData, UserDataResponse};
+use active_sessions::active_sessions_server::{ActiveSessions, ActiveSessionsServer};
 
 #[derive(Default)]
 pub struct ActiveSessionsService;
@@ -20,25 +18,27 @@ pub struct ActiveSessionsService;
 impl ActiveSessions for ActiveSessionsService {
     async fn add_user(
         &self,
-        request: Request<UserData>,             //Userdata from auth-service
-    )-> Result<Response<String>, Status> {      
+        request: Request<UserData>,
+    ) -> Result<Response<UserDataResponse>, Status> { 
 
+        println!("Received request to add user");
         let user_data = request.into_inner();
-
         let session_token = generate_session_token();
         
         let redis_url = "redis://redis:6379/";
-        let redis_client = redis::Client::open(redis_url)
-            .map_err(|e| {
-                eprintln!("Failed to connect to Redis: {:?}", e);
-                Status::internal("Failed to connect to Redis")
-            })?;
+        let redis_client = redis::Client::open(redis_url).map_err(|e| {
+            eprintln!("Failed to connect to Redis: {:?}", e);
+            Status::internal("Failed to connect to Redis")
+        })?;
+        
+        println!("Connected to Redis");
 
-        let mut redis_con = redis_client.get_async_connection().await
-            .map_err(|e| {
-                eprintln!("Failed to get Redis connection: {:?}", e);
-                Status::internal("Failed to get Redis connection")
-            })?;
+        let mut redis_con = redis_client.get_async_connection().await.map_err(|e| {
+            eprintln!("Failed to get Redis connection: {:?}", e);
+            Status::internal("Failed to get Redis connection")
+        })?;
+
+        println!("Obtained Redis connection");
 
         let _: () = redis_con.hset_multiple(
             &user_data.username,
@@ -49,37 +49,42 @@ impl ActiveSessions for ActiveSessionsService {
                 ("location", &user_data.location),
                 ("session_token", &session_token),
             ]
-        ).await 
-            .map_err(|e| {
-                eprintln!("Failed to set data in Redis: {:?}", e);
-                Status::internal("Failed to set data in Redis")
-            })?;
-        
-        // this is done to correctly format the gRPC response
-        let response = UserDataResponse{
+        ).await.map_err(|e| {
+            eprintln!("Failed to set data in Redis: {:?}", e);
+            Status::internal("Failed to set data in Redis")
+        })?;
+
+        let response = UserDataResponse {
             session_token: session_token.clone(),
-        }; 
+        };
+        
+        println!("User '{}' added successfully with session token '{}'", user_data.username, session_token);
 
         Ok(Response::new(response))
-    } 
+    }
 }
-
-
 
 fn generate_session_token() -> String {
-    //random token generation 
-    thread_rng().sample_iter(&Alphanumeric).take(30).collect()
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect()
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50052".parse()?;
+    let addr = "0.0.0.0:50052".parse()?;
     let active_sessions_service = ActiveSessionsService::default();
 
+    println!("Server starting on {}", addr);
+
     Server::builder()
-        .add_service(ActiveSessionsService::new(active_sessions_service))
+        .add_service(ActiveSessionsServer::new(active_sessions_service)) 
         .serve(addr)
         .await?;
+
+    println!("Server started");
+
     Ok(())
 }

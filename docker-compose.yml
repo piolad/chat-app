@@ -1,54 +1,54 @@
 version: '4.2'
 services:
-  # auth-service:
-  #   build:
-  #     context: ./auth-service
-  #   depends_on:
-  #     - auth-service-db
-  #   networks:
-  #     - auth-network
-  #   ports:
-  #     - "50051:50051"
+  auth-service:
+    build:
+      context: ./auth-service
+    depends_on:
+      - auth-service-db
+    networks:
+      - auth-network
+    ports:
+      - "50051:50051"
 
-  # auth-service-db:
-  #   image: postgres:latest
-  #   environment:
-  #     POSTGRES_PASSWORD: mysecretpassword
-  #   networks:
-  #     - auth-network
-  #   ports:
-  #     - "5001:5432" 
+  auth-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    networks:
+      - auth-network
+    ports:
+      - "5001:5432" 
 
-  # active-sessions:
-  #   build: ./active-sessions 
-  #   ports: 
-  #     - "8001:8001"
-  #     - "50052:50052"
-  #   depends_on: 
-  #     - redis 
-  #   environment: 
-  #     - REDIS_URL=redis://redis:6379 
+  active-sessions:
+    build: ./active-sessions 
+    ports: 
+      - "8001:8001"
+      - "50053:50052"
+    depends_on: 
+      - redis 
+    environment: 
+      - REDIS_URL=redis://redis:6379 
   
-  # redis: 
-  #   image: redis:latest 
-  #   ports: 
-  #     - "6378:6379"
+  redis: 
+    image: redis:latest 
+    ports: 
+      - "6378:6379"
 
-  # browser-facade:
-  #   build:
-  #     context: ./browser-facade
-  #   ports:
-  #     - "5000:8080"
-  #   networks:
-  #     - auth-network
+  browser-facade:
+    build:
+      context: ./browser-facade
+    ports:
+      - "5000:8080"
+    networks:
+      - auth-network
       
-  # main-service:
-  #   build:
-  #     context: ./main-service
-  #   ports:
-  #     - "50050:50050"
-  #   networks:
-  #     - auth-network
+  main-service:
+    build:
+      context: ./main-service
+    ports:
+      - "50050:50050"
+    networks:
+      - auth-network
 
   message-data-centre:
     build:

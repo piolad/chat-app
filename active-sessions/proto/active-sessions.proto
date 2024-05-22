@@ -1,5 +1,5 @@
 syntax = "proto3"; 
-package active-sessions;
+package active_sessions;
 
 message UserData { 
     string username = 1;
