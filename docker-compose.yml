@@ -19,59 +19,63 @@ services:
     ports:
       - "5001:5432" 
 
-  # active-sessions:
-  #   build: ./active-sessions 
-  #   ports: 
-  #     - "8001:8001"
-  #     - "50053:50052"
-  #   depends_on: 
-  #     - redis 
-  #   environment: 
-  #     - REDIS_URL=redis://redis:6379 
+  active-sessions:
+    build: ./active-sessions 
+    ports: 
+      - "8001:8001"
+      - "50053:50053"
+    depends_on: 
+      - redis 
+    environment: 
+      - REDIS_URL=redis://redis:6379 
+    networks:
+      - auth-network
   
   redis: 
     image: redis:latest 
     ports: 
-      - "6378:6379"
-
-  browser-facade:
-    build:
-      context: ./browser-facade
-    ports:
-      - "5000:8080"
+      - "6379:6379"
     networks:
       - auth-network
+
+  # browser-facade:
+  #   build:
+  #     context: ./browser-facade
+  #   ports:
+  #     - "5000:8080"
+  #   networks:
+  #     - auth-network
       
-  main-service:
-    build:
-      context: ./main-service
-    ports:
-      - "50050:50050"
-    networks:
-      - auth-network
+  # main-service:
+  #   build:
+  #     context: ./main-service
+  #   ports:
+  #     - "50050:50050"
+  #   networks:
+  #     - auth-network
 
-  message-data-centre:
-    build:
-      context: ./message-data-centre
-    ports:
-      - "50052:50051"
-    networks:
-      - auth-network
+  # message-data-centre:
+  #   build:
+  #     context: ./message-data-centre
+  #   ports:
+  #     - "50052:50051"
+  #   networks:
+  #     - auth-network
 
-  message-data-centre-db:
-    image: mongo:latest
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: adminUser
-      MONGO_INITDB_ROOT_PASSWORD: adminPassword
-    volumes:
-      - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
-    ports:
-      - "27017:27017"
-    depends_on:
-      - message-data-centre
-    networks:
-      - auth-network
+  # message-data-centre-db:
+  #   image: mongo:latest
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: adminUser
+  #     MONGO_INITDB_ROOT_PASSWORD: adminPassword
+  #   volumes:
+  #     - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
+  #   ports:
+  #     - "27017:27017"
+  #   depends_on:
+  #     - message-data-centre
+  #   networks:
+  #     - auth-network
     
 networks:
   auth-network:
