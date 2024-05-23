@@ -8,14 +8,31 @@ pub mod active_sessions {
     tonic::include_proto!("active_sessions");
 }
 
-use active_sessions::{UserData, UserDataResponse};
+use active_sessions::{UserData, UserDataResponse, IdSessionRequest, IdSessionResponse};
 use active_sessions::active_sessions_server::{ActiveSessions, ActiveSessionsServer};
 
 #[derive(Default)]
 pub struct ActiveSessionsService;
 
+
 #[async_trait]
 impl ActiveSessions for ActiveSessionsService {
+    async fn get_session_id(
+        &self, 
+        request: Request<IdSessionRequest>,
+    ) -> Result<Response<IdSessionResponse>, Status> {
+        println!("Received request to get session ID with data: {:?}", request.into_inner());
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(0)).await;
+
+        let response = IdSessionResponse {
+            status: "OK".to_string(),
+            idsession: generate_session_token().to_string(),
+        };
+
+        Ok(Response::new(response))
+    }
+
     async fn add_user(
         &self,
         request: Request<UserData>,
