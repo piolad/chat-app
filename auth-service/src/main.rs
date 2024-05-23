@@ -91,7 +91,7 @@ impl Auth for AuthService {
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
                 token: token.to_string(),
-                idsession: "idsession".to_string(),     //this i get from acctive sessions
+                idsession: idsession.to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
         } else {
