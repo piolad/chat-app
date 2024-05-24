@@ -8,20 +8,35 @@ pub mod active_sessions {
     tonic::include_proto!("active_sessions");
 }
 
-use active_sessions::{UserData, UserDataResponse};
+use active_sessions::{UserData, UserDataResponse, IdSessionRequest, IdSessionResponse};
 use active_sessions::active_sessions_server::{ActiveSessions, ActiveSessionsServer};
 
 #[derive(Default)]
 pub struct ActiveSessionsService;
 
+
 #[async_trait]
 impl ActiveSessions for ActiveSessionsService {
+    async fn get_session_id(
+        &self, 
+        request: Request<IdSessionRequest>,
+    ) -> Result<Response<IdSessionResponse>, Status> {
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(0)).await;
+
+        let response = IdSessionResponse {
+            status: "OK".to_string(),
+            idsession: generate_session_token().to_string(),
+        };
+
+        Ok(Response::new(response))
+    }
+
     async fn add_user(
         &self,
         request: Request<UserData>,
     ) -> Result<Response<UserDataResponse>, Status> { 
 
-        println!("Received request to add user");
         let user_data = request.into_inner();
         let session_token = generate_session_token();
         
@@ -74,7 +89,7 @@ fn generate_session_token() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50052".parse()?;
+    let addr = "0.0.0.0:50053".parse()?;
     let active_sessions_service = ActiveSessionsService::default();
 
     println!("Server starting on {}", addr);
