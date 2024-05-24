@@ -1,25 +1,18 @@
 [package]
 name = "active-sessions"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # Specify the Rust edition.
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-tonic = { version = "0.6", features = ["transport"] }
+tokio = { version = "1.0", features = ["full"] }
+tonic = "0.11.0"
 async-trait = "0.1"
-redis = { version = "0.21", features = ["aio", "tokio-comp"] }
+redis = { version = "0.25.3", features = ["aio", "tokio-comp"] }
 rand = "0.8"
-prost = "0.9"
-prost-types = "0.9"
-tonic-build = "0.6"
+prost = "0.12.6"
+prost-types = "0.12.6"
+tonic-build = "0.11.0"
 
 [build-dependencies]
-tonic-build = "0.6"
-
-# Set build script
-[package.metadata]
-rust-version = "1.56.0"
-
-[workspace]
-members = ["."]
+tonic-build = "0.11.0"

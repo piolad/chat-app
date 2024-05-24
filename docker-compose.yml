@@ -6,6 +6,7 @@ services:
     depends_on:
       - auth-service-db
     networks:
+      - main-network
       - auth-network
     ports:
       - "50051:50051"
@@ -23,16 +24,21 @@ services:
     build: ./active-sessions 
     ports: 
       - "8001:8001"
-      - "50053:50052"
+      - "50053:50053"
     depends_on: 
       - redis 
     environment: 
       - REDIS_URL=redis://redis:6379 
+    networks:
+      - main-network
+      - active-sessions-network
   
   redis: 
     image: redis:latest 
     ports: 
-      - "6378:6379"
+      - "6379:6379"
+    networks:
+      - active-sessions-network
 
   browser-facade:
     build:
@@ -40,7 +46,7 @@ services:
     ports:
       - "5000:8080"
     networks:
-      - auth-network
+      - main-network
       
   main-service:
     build:
@@ -48,7 +54,7 @@ services:
     ports:
       - "50050:50050"
     networks:
-      - auth-network
+      - main-network
 
   message-data-centre:
     build:
@@ -56,7 +62,8 @@ services:
     ports:
       - "50052:50051"
     networks:
-      - auth-network
+      - main-network
+      - message-data-centre-network
 
   message-data-centre-db:
     image: mongo:latest
@@ -71,8 +78,14 @@ services:
     depends_on:
       - message-data-centre
     networks:
-      - auth-network
+      - message-data-centre-network
     
 networks:
+  main-network:
+    driver: bridge
   auth-network:
+    driver: bridge
+  active-sessions-network:
+    driver: bridge
+  message-data-centre-network:
     driver: bridge

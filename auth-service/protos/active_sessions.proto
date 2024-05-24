@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package active_sessions;
+
+service ActiveSessions {
+    rpc GetSessionId(IdSessionRequest) returns (IdSessionResponse);
+}
+
+message IdSessionRequest {
+    string username = 1;
+    string email = 2;
+    string name = 3;
+    string surname = 4;
+    string token = 5;
+    string location = 6;
+}
+
+message IdSessionResponse {
+    string status = 1;
+    string idsession = 2;
+}

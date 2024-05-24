@@ -5,9 +5,12 @@ use dotenv::dotenv;
 use proto::auth_server::{Auth, AuthServer};
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+//use serde_json;
+use tonic::transport::Channel;
 
 mod proto {
     tonic::include_proto!("auth");
+    tonic::include_proto!("active_sessions");
 }
 
 #[derive(Debug)]
@@ -47,7 +50,7 @@ impl Auth for AuthService {
             }
         };
 
-        let user_query = "SELECT email,username,hashed_password FROM users WHERE email = $1 OR username = $1";
+        let user_query = "SELECT username, email, first_name, last_name, hashed_password FROM users WHERE email = $1 OR username = $1";
         let row = match self.client.query_one(user_query, &[&login_identifier]).await {
             Ok(row) => row,
             Err(_) => {
@@ -55,15 +58,40 @@ impl Auth for AuthService {
             }
         };
 
-        let email: String = row.get(0);
-        let username: String = row.get(1);
-        let hashed_password: String = row.get(2);
+        let username: String = row.get(0);
+        let email: String = row.get(1);
+        let name: String = row.get(2);
+        let surname: String = row.get(3);
+        let hashed_password: String = row.get(4);
+        let token = generate_token(32);
 
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
+            let channel = match Channel::from_static("http://active-sessions:50053").connect().await {
+                Ok(channel) => channel,
+                Err(err) => {
+                    eprintln!("Failed to connect to active sessions service: {:?}", err);
+                    return Err(Status::internal("Failed to connect to active sessions service"));
+                }
+            };
+
+            let mut client = proto::active_sessions_client::ActiveSessionsClient::new(channel);
+
+            let request = tonic::Request::new(proto::IdSessionRequest {
+                username: username,
+                email: email.to_string(),
+                name : name.to_string(),
+                surname : surname.to_string(),
+                token : token.to_string(),
+                location : "Warsaw".to_string(),
+            });
+
+            let idsession = client.get_session_id(request).await?.into_inner().idsession;
+            println!("idsession: {}", idsession);
+
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
-                token: generate_token(32).to_string(),
-                idsession: "idsession".to_string(),     //this i get from acctive sessions
+                token: token.to_string(),
+                idsession: idsession.to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
         } else {

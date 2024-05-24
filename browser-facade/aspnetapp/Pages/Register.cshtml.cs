@@ -39,6 +39,12 @@ namespace aspnetapp.Pages
                     return Page();
                 }
 
+                if (!DateTime.TryParseExact(BirthDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
+                {
+                    ViewData["AlertMessage"] = "Please fill out the data in format yyyy-MM-dd like 1999-12-31";
+                    return Page();
+                }
+
                 ViewData["AlertMessage"] = "Good done!";
                 _logger.LogInformation("Register submitted with FirstName: {FirstName}, LastName: {LastName}, BirthDate: {BirthDate}, Email: {Email}, Username: {Username}, Password: {Password}", FirstName, LastName, BirthDate, Email, Username, Password);
                 
