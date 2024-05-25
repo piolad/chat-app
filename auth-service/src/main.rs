@@ -7,6 +7,7 @@ use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 //use serde_json;
 use tonic::transport::Channel;
+use chrono::{Utc, Duration};
 
 mod proto {
     tonic::include_proto!("auth");
@@ -18,19 +19,30 @@ struct AuthService {
     client: tokio_postgres::Client,
 }
 
+struct Token{
+    value: String,
+    expiration_time: i64,
+
+}
+
 impl AuthService {
     fn new(client: tokio_postgres::Client) -> Self {
         Self { client }
     }
 }
 
-fn generate_token(length: usize) -> String {
+fn generate_token(length: usize) -> Token {
     let rng = thread_rng();
     let token: String = rng.sample_iter(&Alphanumeric)
         .take(length)
         .map(|c| c as char) // Convert each u8 to char
         .collect(); // Collect characters into a String
-    token
+    let expiration_time = Utc::now() + Duration::seconds(3600);
+    let token_with_exp = Token {
+        value: token,
+        expiration_time: expiration_time.timestamp(),
+    };
+    token_with_exp
 }
 
 #[tonic::async_trait]
@@ -64,6 +76,8 @@ impl Auth for AuthService {
         let surname: String = row.get(3);
         let hashed_password: String = row.get(4);
         let token = generate_token(32);
+        println!("token: {}", token.value);
+        println!("expiration_time: {}", token.expiration_time);
 
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
             let channel = match Channel::from_static("http://active-sessions:50053").connect().await {
@@ -81,7 +95,7 @@ impl Auth for AuthService {
                 email: email.to_string(),
                 name : name.to_string(),
                 surname : surname.to_string(),
-                token : token.to_string(),
+                token : token.value.to_string(),
                 location : "Warsaw".to_string(),
             });
 
@@ -90,7 +104,7 @@ impl Auth for AuthService {
 
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
-                token: token.to_string(),
+                token: token.value.to_string(),
                 idsession: idsession.to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
@@ -110,7 +124,7 @@ impl Auth for AuthService {
         let email = request.email;
         let username = request.username;
         let hashed_password = hash_password(&request.password);
-        let key = generate_token(32);
+        let key = generate_token(32).value;
 
         let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key) VALUES ($1, $2, $3, $4, $5, $6, $7)"#;
         match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate, &key]).await {
@@ -176,7 +190,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key)
             VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01','{}')
         "#,
-        hash_password("8rud!"), generate_token(32)
+        hash_password("8rud!"), generate_token(32).value
     );
 
     client.execute(add_user_query.as_str(), &[]).await?;

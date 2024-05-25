@@ -13,6 +13,7 @@ message IdSessionRequest {
     string surname = 4;
     string token = 5;
     string location = 6;
+    // string tokenexpiration = 7;
 }
 
 message IdSessionResponse {
