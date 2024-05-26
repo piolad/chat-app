@@ -76,16 +76,14 @@ impl Auth for AuthService {
 
             let mut client = proto::active_sessions_client::ActiveSessionsClient::new(channel);
 
-            let request = tonic::Request::new(proto::IdSessionRequest {
+            let request = tonic::Request::new(proto::UserData {
                 username: username,
                 email: email.to_string(),
-                name : name.to_string(),
-                surname : surname.to_string(),
                 token : token.to_string(),
                 location : "Warsaw".to_string(),
             });
 
-            let idsession = client.get_session_id(request).await?.into_inner().idsession;
+            let idsession = client.add_user(request).await?.into_inner().session_token;
             println!("idsession: {}", idsession);
 
             let reply = proto::LoginResponse {

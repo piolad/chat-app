@@ -2,20 +2,17 @@ syntax = "proto3";
 
 package active_sessions;
 
-service ActiveSessions {
-    rpc GetSessionId(IdSessionRequest) returns (IdSessionResponse);
-}
-
-message IdSessionRequest {
+message UserData { 
     string username = 1;
-    string email = 2;
-    string name = 3;
-    string surname = 4;
-    string token = 5;
-    string location = 6;
+    string email = 2; 
+    string token = 3; 
+    string location = 4; 
+} 
+
+message UserDataResponse{
+    string session_token = 1;
 }
 
-message IdSessionResponse {
-    string status = 1;
-    string idsession = 2;
+service ActiveSessions {
+    rpc AddUser (UserData) returns (UserDataResponse); 
 }
