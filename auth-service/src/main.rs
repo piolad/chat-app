@@ -177,7 +177,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         hash_password("8rud!"), generate_token(32)
     );
 
-    client.execute(add_user_query.as_str(), &[]).await?;
+    if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
+        println!("Failed to add user: {:?}", e);
+    }
 
     println!("Server listening on {}", addr);
     Server::builder()

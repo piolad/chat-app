@@ -17,7 +17,7 @@
         SELECT * 
         FROM Messages 
         WHERE id_1 = username1 AND id_2 = username2
-        ORDER BY id DESC 
+        ORDER BY date DESC 
         LIMIT 10;
 
         This SELECT will return 10 last messages between the users along with other information held in the table Messages that might look like a table below: 
