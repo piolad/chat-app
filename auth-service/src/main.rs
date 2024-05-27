@@ -50,7 +50,7 @@ impl Auth for AuthService {
             }
         };
 
-        let user_query = "SELECT username, email, first_name, last_name, hashed_password FROM users WHERE email = $1 OR username = $1";
+        let user_query = "SELECT username, email, hashed_password FROM users WHERE email = $1 OR username = $1";
         let row = match self.client.query_one(user_query, &[&login_identifier]).await {
             Ok(row) => row,
             Err(_) => {
@@ -60,9 +60,7 @@ impl Auth for AuthService {
 
         let username: String = row.get(0);
         let email: String = row.get(1);
-        let name: String = row.get(2);
-        let surname: String = row.get(3);
-        let hashed_password: String = row.get(4);
+        let hashed_password: String = row.get(2);
         let token = generate_token(32);
 
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
