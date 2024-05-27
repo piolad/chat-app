@@ -62,7 +62,7 @@ impl Auth for AuthService {
             }
         };
 
-        let user_query = "SELECT username, email, first_name, last_name, hashed_password FROM users WHERE email = $1 OR username = $1";
+        let user_query = "SELECT username, email, hashed_password FROM users WHERE email = $1 OR username = $1";
         let row = match self.client.query_one(user_query, &[&login_identifier]).await {
             Ok(row) => row,
             Err(_) => {
@@ -72,9 +72,7 @@ impl Auth for AuthService {
 
         let username: String = row.get(0);
         let email: String = row.get(1);
-        let name: String = row.get(2);
-        let surname: String = row.get(3);
-        let hashed_password: String = row.get(4);
+        let hashed_password: String = row.get(2);
         let token = generate_token(32);
         println!("token: {}", token.value);
         println!("expiration_time: {}", token.expiration_time);
@@ -90,16 +88,14 @@ impl Auth for AuthService {
 
             let mut client = proto::active_sessions_client::ActiveSessionsClient::new(channel);
 
-            let request = tonic::Request::new(proto::IdSessionRequest {
+            let request = tonic::Request::new(proto::UserData {
                 username: username,
                 email: email.to_string(),
-                name : name.to_string(),
-                surname : surname.to_string(),
-                token : token.value.to_string(),
+                token : token.to_string(),
                 location : "Warsaw".to_string(),
             });
 
-            let idsession = client.get_session_id(request).await?.into_inner().idsession;
+            let idsession = client.add_user(request).await?.into_inner().session_token;
             println!("idsession: {}", idsession);
 
             let reply = proto::LoginResponse {
@@ -192,7 +188,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         hash_password("8rud!"), generate_token(32).value
     );
 
-    client.execute(add_user_query.as_str(), &[]).await?;
+    if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
+        println!("Failed to add user: {:?}", e);
+    }
 
     println!("Server listening on {}", addr);
     Server::builder()
