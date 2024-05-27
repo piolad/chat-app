@@ -22,7 +22,6 @@ struct AuthService {
 struct Token{
     value: String,
     expiration_time: i64,
-
 }
 
 impl AuthService {
@@ -91,7 +90,7 @@ impl Auth for AuthService {
             let request = tonic::Request::new(proto::UserData {
                 username: username,
                 email: email.to_string(),
-                token : token.to_string(),
+                token : token.value.to_string(),
                 location : "Warsaw".to_string(),
             });
 
