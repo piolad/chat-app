@@ -8,7 +8,7 @@ pub mod active_sessions {
     tonic::include_proto!("active_sessions");
 }
 
-use active_sessions::{UserData, UserDataResponse, IdSessionRequest, IdSessionResponse};
+use active_sessions::{UserData, UserDataResponse};
 use active_sessions::active_sessions_server::{ActiveSessions, ActiveSessionsServer};
 
 #[derive(Default)]
@@ -17,20 +17,20 @@ pub struct ActiveSessionsService;
 
 #[async_trait]
 impl ActiveSessions for ActiveSessionsService {
-    async fn get_session_id(
-        &self, 
-        request: Request<IdSessionRequest>,
-    ) -> Result<Response<IdSessionResponse>, Status> {
+    // async fn get_session_id(
+    //     &self, 
+    //     request: Request<IdSessionRequest>,
+    // ) -> Result<Response<IdSessionResponse>, Status> {
 
-        tokio::time::sleep(tokio::time::Duration::from_secs(0)).await;
+    //     tokio::time::sleep(tokio::time::Duration::from_secs(0)).await;
 
-        let response = IdSessionResponse {
-            status: "OK".to_string(),
-            idsession: generate_session_token().to_string(),
-        };
+    //     let response = IdSessionResponse {
+    //         status: "OK".to_string(),
+    //         idsession: generate_session_token().to_string(),
+    //     };
 
-        Ok(Response::new(response))
-    }
+    //     Ok(Response::new(response))
+    // }
 
     async fn add_user(
         &self,
@@ -46,21 +46,17 @@ impl ActiveSessions for ActiveSessionsService {
             Status::internal("Failed to connect to Redis")
         })?;
         
-        println!("Connected to Redis");
-
         let mut redis_con = redis_client.get_async_connection().await.map_err(|e| {
             eprintln!("Failed to get Redis connection: {:?}", e);
             Status::internal("Failed to get Redis connection")
         })?;
-
-        println!("Obtained Redis connection");
 
         let _: () = redis_con.hset_multiple(
             &user_data.username,
             &[
                 ("username", &user_data.username),
                 ("email", &user_data.email),
-                ("key", &user_data.key),
+                ("token", &user_data.token),
                 ("location", &user_data.location),
                 ("session_token", &session_token),
             ]
@@ -73,8 +69,6 @@ impl ActiveSessions for ActiveSessionsService {
             session_token: session_token.clone(),
         };
         
-        println!("User '{}' added successfully with session token '{}'", user_data.username, session_token);
-
         Ok(Response::new(response))
     }
 }
