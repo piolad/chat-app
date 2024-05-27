@@ -1,4 +1,5 @@
-version: '4.2'
+name: chat-app
+
 services:
   auth-service:
     build:
