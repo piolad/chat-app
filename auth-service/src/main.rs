@@ -14,6 +14,8 @@ mod proto {
     tonic::include_proto!("active_sessions");
 }
 
+const BCRYPT_COST: u32 = 4; // Lower value for faster hashing, but less secure
+
 #[derive(Debug)]
 struct AuthService {
     client: tokio_postgres::Client,
@@ -142,7 +144,7 @@ impl Auth for AuthService {
 }
 
 fn hash_password(password: &str) -> String {
-    bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
+    bcrypt::hash(password, BCRYPT_COST).expect("Failed to hash password")
 }
 
 fn verify_password(password: &str, hashed_password: &str) -> bool {
