@@ -58,7 +58,7 @@ func (s *server) SaveMessage(ctx context.Context, in *pb.HelloRequest) (*pb.Hell
 	return in, nil
 }
 
-func ensureCollectionExists() error {
+func ensureCollectionExists_Messages() error {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
 		return err
@@ -69,9 +69,9 @@ func ensureCollectionExists() error {
 
 	// Define the index keys
 	indexKeys := bson.D{
-		{"message", 1},
-		{"timestamp", 1},
-		{"status", 1},
+		{Key: "message", Value: 1},
+		{Key: "timestamp", Value: -1},
+		{Key: "status", Value: 1},
 	}
 
 	// Define the index options
@@ -93,7 +93,7 @@ func ensureCollectionExists() error {
 }
 
 func main() {
-	if err := ensureCollectionExists(); err != nil {
+	if err := ensureCollectionExists_Messages(); err != nil {
 		log.Fatalf("failed to ensure collection exists: %v", err)
 	}
 

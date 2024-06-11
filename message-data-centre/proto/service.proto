@@ -6,6 +6,7 @@ option go_package = "/proto;proto";
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SendMessage (Message) returns (Response) {}
 }
 
 message HelloRequest {
@@ -15,3 +16,15 @@ message HelloRequest {
 message HelloReply {
   string message = 1;
 }
+
+message Message {
+  string sender = 1;
+  string receiver = 2;
+  string message = 3;
+  string timestamp = 4;
+}
+
+message Response{
+  string message = 1;
+}
+
