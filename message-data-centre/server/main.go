@@ -18,7 +18,6 @@ const (
 	port                    = ":50051"
 	mongoDBConnectionString = "mongodb://adminUser:adminPassword@message-data-centre-db:27017"
 	mongoDBName             = "message-db"
-	mongoCollectionName     = "messages"
 )
 
 // server is used to implement service.GreeterServer.
@@ -40,7 +39,7 @@ func (s *server) SaveMessage(ctx context.Context, in *pb.HelloRequest) (*pb.Hell
 	}
 	defer client.Disconnect(context.Background())
 
-	collection := client.Database(mongoDBName).Collection(mongoCollectionName)
+	collection := client.Database(mongoDBName).Collection("messages")
 
 	// Create a BSON document from the input message
 	messageDocument := bson.M{
@@ -65,7 +64,7 @@ func ensureCollectionExists_Messages() error {
 	}
 	defer client.Disconnect(context.Background())
 
-	collection := client.Database(mongoDBName).Collection(mongoCollectionName)
+	collection := client.Database(mongoDBName).Collection("messages")
 
 	// Define the index keys
 	indexKeys := bson.D{
