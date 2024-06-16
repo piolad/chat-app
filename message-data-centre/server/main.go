@@ -24,6 +24,7 @@ type message struct {
 	Message        string `bson:"message" json:"message"`
 	Timestamp      string `bson:"timestamp" json:"timestamp"`
 	ConversationID string `bson:"conversation_id" json:"conversation_id"`
+	Sender         string `bson:"sender" json:"sender"`
 }
 
 func main() {

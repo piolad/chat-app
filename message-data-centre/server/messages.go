@@ -24,6 +24,7 @@ func (s *server) SaveMessage(ctx context.Context, in *message) error {
 		"timestamp":       in.Timestamp,
 		"status":          "unread",
 		"conversation_id": in.ConversationID,
+		"sender":          in.Sender,
 	}
 
 	// Insert the document into the collection
@@ -46,10 +47,11 @@ func ensureCollectionExists_Messages() error {
 
 	// Define the index keys
 	indexKeys := bson.D{
-		{Key: "message", Value: 1},
 		{Key: "timestamp", Value: -1},
+		{Key: "message", Value: 1},
 		{Key: "status", Value: 1},
 		{Key: "conversation_id", Value: 1},
+		{Key: "sender", Value: 1},
 	}
 
 	// Define the index options

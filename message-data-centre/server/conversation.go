@@ -19,28 +19,18 @@ import (
 
 func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response, error) {
 	log.Printf("Recived message: %v", in.GetMessage())
-	sender, receiver, id, err := s.ensureConversationExists(in.GetSender(), in.GetReceiver())
+	id, err := s.ensureConversationExists(in.GetSender(), in.GetReceiver())
 	if err != nil {
 		return nil, err
 	}
 	//update timestamp last
 
-	var updatedMessage string
-
-	// log.Printf("sender: %s%s", sender, in.GetSender())
-	// log.Printf("receiver: %s%s", receiver, in.GetReceiver())
-
-	if sender == in.GetSender() {
-		updatedMessage = "1 " + in.GetMessage()
-	} else if receiver == in.GetSender() {
-		updatedMessage = "2 " + in.GetMessage()
-	}
-
 	// Create a new message instance with the updated content
 	newMessage := &message{
-		Message:        updatedMessage,
+		Message:        in.GetMessage(),
 		Timestamp:      in.GetTimestamp(),
 		ConversationID: id,
+		Sender:         in.GetSender(),
 	}
 
 	s.SaveMessage(ctx, newMessage)
@@ -48,11 +38,11 @@ func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response,
 	return &pb.Response{Message: "Message send by " + in.GetSender() + " to " + in.GetReceiver() + " with message : " + in.GetMessage() + " at time " + in.GetTimestamp()}, nil
 }
 
-func (s *server) ensureConversationExists(sender string, receiver string) (string, string, string, error) {
+func (s *server) ensureConversationExists(sender string, receiver string) (string, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
 		log.Fatal(err) // error during connection to
-		return "", "", "", err
+		return "", err
 	}
 	defer client.Disconnect(context.Background())
 
@@ -79,17 +69,17 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 		insertResult, err := collection.InsertOne(context.Background(), newConversation)
 		if err != nil {
 			log.Fatal(err)
-			return "", "", "", err
+			return "", err
 		}
 
 		// Extract the inserted ID
 		conversationID := insertResult.InsertedID.(primitive.ObjectID).Hex()
 		log.Println("New conversation created between sender:", sender, "and receiver:", receiver)
-		return sender, receiver, conversationID, nil
+		return conversationID, nil
 	} else if err != nil {
 		// Handle other potential errors
 		log.Fatal(err)
-		return "", "", "", err
+		return "", err
 	}
 
 	// If a document is found, extract the ID and log that the conversation already exists
@@ -97,7 +87,7 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 	sender = result["sender"].(string)
 	receiver = result["receiver"].(string)
 	log.Println("Conversation already exists between sender:", sender, "and receiver:", receiver)
-	return sender, receiver, conversationID, nil
+	return conversationID, nil
 }
 
 func ensureCollectionExists_Conversations() error {
