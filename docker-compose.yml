@@ -1,45 +1,45 @@
 name: chat-app
 
 services:
-  # auth-service:
-  #   build:
-  #     context: ./auth-service
-  #   depends_on:
-  #     - auth-service-db
-  #   networks:
-  #     - main-network
-  #     - auth-network
-  #   ports:
-  #     - "50051:50051"
+  auth-service:
+    build:
+      context: ./auth-service
+    depends_on:
+      - auth-service-db
+    networks:
+      - main-network
+      - auth-network
+    ports:
+      - "50051:50051"
 
-  # auth-service-db:
-  #   image: postgres:latest
-  #   environment:
-  #     POSTGRES_PASSWORD: mysecretpassword
-  #   networks:
-  #     - auth-network
-  #   ports:
-  #     - "5001:5432" 
+  auth-service-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    networks:
+      - auth-network
+    ports:
+      - "5001:5432" 
 
-  # active-sessions:
-  #   build: ./active-sessions 
-  #   ports: 
-  #     - "8001:8001"
-  #     - "50053:50053"
-  #   depends_on: 
-  #     - redis 
-  #   environment: 
-  #     - REDIS_URL=redis://redis:6379 
-  #   networks:
-  #     - main-network
-  #     - active-sessions-network
+  active-sessions:
+    build: ./active-sessions 
+    ports: 
+      - "8001:8001"
+      - "50053:50053"
+    depends_on: 
+      - active-sessions-db 
+    environment: 
+      - REDIS_URL=redis://redis:6379 
+    networks:
+      - main-network
+      - active-sessions-network
   
-  # redis: 
-  #   image: redis:latest 
-  #   ports: 
-  #     - "6379:6379"
-  #   networks:
-  #     - active-sessions-network
+  active-sessions-db: 
+    image: redis:latest 
+    ports: 
+      - "6379:6379"
+    networks:
+      - active-sessions-network
 
   # browser-facade:
   #   build:
@@ -57,29 +57,29 @@ services:
   #   networks:
   #     - main-network
 
-  message-data-centre:
-    build:
-      context: ./message-data-centre
-    ports:
-      - "50052:50051"
-    networks:
-      - main-network
-      - message-data-centre-network
+  # message-data-centre:
+  #   build:
+  #     context: ./message-data-centre
+  #   ports:
+  #     - "50052:50051"
+  #   networks:
+  #     - main-network
+  #     - message-data-centre-network
 
-  message-data-centre-db:
-    image: mongo:latest
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: adminUser
-      MONGO_INITDB_ROOT_PASSWORD: adminPassword
-    volumes:
-      - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
-    ports:
-      - "27017:27017"
-    depends_on:
-      - message-data-centre
-    networks:
-      - message-data-centre-network
+  # message-data-centre-db:
+  #   image: mongo:latest
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: adminUser
+  #     MONGO_INITDB_ROOT_PASSWORD: adminPassword
+  #   volumes:
+  #     - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
+  #   ports:
+  #     - "27017:27017"
+  #   depends_on:
+  #     - message-data-centre
+  #   networks:
+  #     - message-data-centre-network
     
 networks:
   main-network:

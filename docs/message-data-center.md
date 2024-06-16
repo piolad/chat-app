@@ -39,4 +39,7 @@
         maybe by separating conversations between pair of users into the other table called "Chats"
 
         
-        
+3 tabele:
+- conversationID
+- user
+- AES encrypted
