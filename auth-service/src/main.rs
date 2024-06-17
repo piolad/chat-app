@@ -5,6 +5,10 @@ use dotenv::dotenv;
 use proto::auth_server::{Auth, AuthServer};
 use tonic::transport::Channel;
 
+mod security; // Import security module where generate_rsa_keypair is defined
+
+use security::generate_rsa_keypair; // Import generate_rsa_keypair function
+
 mod proto {
     tonic::include_proto!("auth");
     tonic::include_proto!("active_sessions");
@@ -95,6 +99,8 @@ impl Auth for AuthService {
         let username = request.username;
         let hashed_password = hash_password(&request.password);
 
+        generate_rsa_keypair();     //test
+
         let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
         match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
             Ok(_) => {
@@ -139,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let table_creation_query = r#"
+    let table_creation_users = r#"
         CREATE TABLE IF NOT EXISTS users (
             Id SERIAL PRIMARY KEY,
             email VARCHAR(255) NOT NULL UNIQUE,
@@ -150,7 +156,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             date VARCHAR(250) NOT NULL
         )"#;
 
-    client.execute(table_creation_query, &[]).await?;
+    client.execute(table_creation_users, &[]).await?;
+
+    let table_creation_keys = r#"
+        CREATE TABLE IF NOT EXISTS keys (
+            Id_user SERIAL PRIMARY KEY,
+            public_key TEXT NOT NULL,
+            private_key TEXT NOT NULL
+        )"#;
+
+    client.execute(table_creation_keys, &[]).await?;
 
     let add_user_query = format!(
         r#"
