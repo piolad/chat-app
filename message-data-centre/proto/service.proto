@@ -4,14 +4,18 @@ package service;
 
 option go_package = "/proto;proto";
 
-service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+service MessageService {
+  rpc SendMessage (Message) returns (Response) {}
 }
 
-message HelloRequest {
-  string name = 1;
+message Message {
+  string sender = 1;
+  string receiver = 2;
+  string message = 3;
+  string timestamp = 4;
 }
 
-message HelloReply {
+message Response{
   string message = 1;
 }
+

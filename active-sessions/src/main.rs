@@ -40,7 +40,7 @@ impl ActiveSessions for ActiveSessionsService {
         let user_data = request.into_inner();
         let session_token = generate_session_token();
         
-        let redis_url = "redis://redis:6379/";
+        let redis_url = "redis://active-sessions-db:6379/";
         let redis_client = redis::Client::open(redis_url).map_err(|e| {
             eprintln!("Failed to connect to Redis: {:?}", e);
             Status::internal("Failed to connect to Redis")
@@ -51,12 +51,14 @@ impl ActiveSessions for ActiveSessionsService {
             Status::internal("Failed to get Redis connection")
         })?;
 
+        let delete_str = String::from("delete");
+
         let _: () = redis_con.hset_multiple(
             &user_data.username,
             &[
                 ("username", &user_data.username),
                 ("email", &user_data.email),
-                ("token", &user_data.token),
+                ("token", &delete_str),
                 ("location", &user_data.location),
                 ("session_token", &session_token),
             ]

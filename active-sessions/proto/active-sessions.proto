@@ -4,8 +4,7 @@ package active_sessions;
 message UserData { 
     string username = 1;
     string email = 2; 
-    string token = 3; 
-    string location = 4; 
+    string location = 3; 
 } 
 
 message UserDataResponse{

@@ -3,15 +3,18 @@ use tokio_postgres::NoTls;
 use dotenv::dotenv;
 //use bcrypt::{hash, verify};
 use proto::auth_server::{Auth, AuthServer};
-use rand::{Rng, thread_rng};
-use rand::distributions::Alphanumeric;
-//use serde_json;
 use tonic::transport::Channel;
+
+mod security; // Import security module where generate_rsa_keypair is defined
+
+use security::generate_rsa_keypair; // Import generate_rsa_keypair function
 
 mod proto {
     tonic::include_proto!("auth");
     tonic::include_proto!("active_sessions");
 }
+
+const BCRYPT_COST: u32 = 4; // Lower value for faster hashing, but less secure
 
 #[derive(Debug)]
 struct AuthService {
@@ -22,15 +25,6 @@ impl AuthService {
     fn new(client: tokio_postgres::Client) -> Self {
         Self { client }
     }
-}
-
-fn generate_token(length: usize) -> String {
-    let rng = thread_rng();
-    let token: String = rng.sample_iter(&Alphanumeric)
-        .take(length)
-        .map(|c| c as char) // Convert each u8 to char
-        .collect(); // Collect characters into a String
-    token
 }
 
 #[tonic::async_trait]
@@ -61,7 +55,6 @@ impl Auth for AuthService {
         let username: String = row.get(0);
         let email: String = row.get(1);
         let hashed_password: String = row.get(2);
-        let token = generate_token(32);
 
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
             let channel = match Channel::from_static("http://active-sessions:50053").connect().await {
@@ -77,7 +70,6 @@ impl Auth for AuthService {
             let request = tonic::Request::new(proto::UserData {
                 username: username,
                 email: email.to_string(),
-                token : token.to_string(),
                 location : "Warsaw".to_string(),
             });
 
@@ -86,7 +78,7 @@ impl Auth for AuthService {
 
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
-                token: token.to_string(),
+                token: "delete".to_string(), //do usunięcia
                 idsession: idsession.to_string(),     //this i get from acctive sessions
             };
             return Ok(Response::new(reply));
@@ -106,10 +98,11 @@ impl Auth for AuthService {
         let email = request.email;
         let username = request.username;
         let hashed_password = hash_password(&request.password);
-        let key = generate_token(32);
 
-        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key) VALUES ($1, $2, $3, $4, $5, $6, $7)"#;
-        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate, &key]).await {
+        generate_rsa_keypair();     //test
+
+        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
+        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
             Ok(_) => {
                 let reply = proto::RegisterResponse {
                     status: "Success".to_string(),
@@ -118,7 +111,6 @@ impl Auth for AuthService {
             }
             Err(e) => {
                 if e.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
-                    // Assuming there's only one unique constraint for both email and username
                     let error_msg = format!("User with email '{}' or username '{}' already exists", email, username);
                     return Err(Status::already_exists(error_msg));
                 }
@@ -130,7 +122,7 @@ impl Auth for AuthService {
 }
 
 fn hash_password(password: &str) -> String {
-    bcrypt::hash(password, bcrypt::DEFAULT_COST).expect("Failed to hash password")
+    bcrypt::hash(password, BCRYPT_COST).expect("Failed to hash password")
 }
 
 fn verify_password(password: &str, hashed_password: &str) -> bool {
@@ -153,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let table_creation_query = r#"
+    let table_creation_users = r#"
         CREATE TABLE IF NOT EXISTS users (
             Id SERIAL PRIMARY KEY,
             email VARCHAR(255) NOT NULL UNIQUE,
@@ -161,18 +153,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             hashed_password TEXT NOT NULL,
             first_name VARCHAR(100),
             last_name VARCHAR(100),
-            date VARCHAR(250) NOT NULL,
-            key VARCHAR(250) NOT NULL
+            date VARCHAR(250) NOT NULL
         )"#;
 
-    client.execute(table_creation_query, &[]).await?;
+    client.execute(table_creation_users, &[]).await?;
+
+    let table_creation_keys = r#"
+        CREATE TABLE IF NOT EXISTS keys (
+            Id_user SERIAL PRIMARY KEY,
+            public_key TEXT NOT NULL,
+            private_key TEXT NOT NULL
+        )"#;
+
+    client.execute(table_creation_keys, &[]).await?;
 
     let add_user_query = format!(
         r#"
-            INSERT INTO users (email, username, hashed_password, first_name, last_name, date, key)
-            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01','{}')
+            INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
+            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
         "#,
-        hash_password("8rud!"), generate_token(32)
+        hash_password("8rud!")
     );
 
     if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
@@ -187,3 +187,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+
+//wyrzucić token i expiration date dla niego
+//dodać tabele do kluczy
