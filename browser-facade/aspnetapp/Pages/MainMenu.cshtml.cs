@@ -64,6 +64,7 @@ namespace aspnetapp.Pages
 
             // Refresh the page to display the alert message
             return Page();
+            // return redirect("/MainLogin");
         }
     }
 }
