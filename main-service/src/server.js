@@ -3,6 +3,8 @@ const protoLoader = require('@grpc/proto-loader');
 const winston = require('winston');
 const util = require('util')
 
+const BrowserFacadeHandlers = require('./handlers/browser-facade-handlers')
+
 
 const logger = winston.createLogger({
   level: 'info',
@@ -24,7 +26,6 @@ const protoPahts = [
   '../protos/BrowserFacade.proto',
   '../protos/auth.proto',
 ]
-
 
 const packageDefinition = protoLoader.loadSync(protoPahts , {
   keepCase: true,
@@ -86,23 +87,6 @@ function Register_toAuthService(firstname, lastname, birthdate, username, email,
   });
 }
 
-async function Login_fromBrowserFacade(call, callback) {
-  logger.info(`Login request received from ${util.inspect(call.request, {depth: null})}`);
-
-  try {
-    const resp = await Login_toAuthService(call.request.username, call.request.password);
-    logger.info(`B ${util.inspect(resp, {depth: null})}`);
-    callback(null, {
-      success: resp.status == 'Success',
-      username: call.request.username,
-      token: resp.token,
-      message: resp.status
-    });
-  } catch (error) {
-    logger.error(`Error occurred during login: ${error.message}`);
-    callback(error, null); // Sending error response to the client
-  }
-}
 
 async function Register_fromBrowserFacade(call, callback) {
   logger.info(`Register request received from ${util.inspect(call.request, {depth: null})}`);
@@ -121,7 +105,7 @@ async function Register_fromBrowserFacade(call, callback) {
 }
 
 const server = new grpc.Server();
-server.addService(BrowserFacadeService, { Login: Login_fromBrowserFacade, Register: Register_fromBrowserFacade });
+server.addService(BrowserFacadeService, { Login: (call, callback) =>{BrowserFacadeHandlers.Login_fromBrowserFacade(call, callback, {logger: logger, login_toAuthService: Login_toAuthService})} , Register: Register_fromBrowserFacade });
 server.bindAsync('0.0.0.0:50050', grpc.ServerCredentials.createInsecure(), () => {
   console.log('Server running at 0.0.0.0:50050');
 });
