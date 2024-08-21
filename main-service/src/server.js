@@ -42,7 +42,7 @@ const loadedProtos = grpc.loadPackageDefinition(packageDefinition);
 
 const BrowserFacadeService = loadedProtos.BrowserFacade.BrowserFacade.service;
 const AuthServiceClient = new loadedProtos.auth.Auth('auth-service:50051', grpc.credentials.createInsecure());
-const MessageDataCenterClient = new loadedProtos.service.MessageService('message-data-centre:50052', grpc.credentials.createInsecure());
+const MessageDataCenterClient = new loadedProtos.service.MessageService('message-data-centre:50051', grpc.credentials.createInsecure());
 
 // function definitions
 function Login_toAuthService(username, password) {
