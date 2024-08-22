@@ -25,9 +25,10 @@ process.on('uncaughtException', (err) => {
 const protoPahts = [
   '../protos/BrowserFacade.proto',
   '../protos/auth.proto',
+  '../protos/service.proto',
 ]
 
-const packageDefinition = protoLoader.loadSync(protoPahts , {
+const packageDefinition = protoLoader.loadSync(protoPahts, {
   keepCase: true,
   longs: String,
   enums: String,
@@ -37,9 +38,11 @@ const packageDefinition = protoLoader.loadSync(protoPahts , {
 
 const loadedProtos = grpc.loadPackageDefinition(packageDefinition);
 
-const BrowserFacadeService = loadedProtos.BrowserFacade.BrowserFacade.service;
+// console.log(util.inspect(loadedProtos, {depth: null}));
 
-const client = new loadedProtos.auth.Auth('auth-service:50051', grpc.credentials.createInsecure());
+const BrowserFacadeService = loadedProtos.BrowserFacade.BrowserFacade.service;
+const AuthServiceClient = new loadedProtos.auth.Auth('auth-service:50051', grpc.credentials.createInsecure());
+const MessageDataCenterClient = new loadedProtos.service.MessageService('message-data-centre:50051', grpc.credentials.createInsecure());
 
 // function definitions
 function Login_toAuthService(username, password) {
@@ -50,7 +53,7 @@ function Login_toAuthService(username, password) {
       password: password
     };
 
-    client.login(request, (error, response) => {
+    AuthServiceClient.login(request, (error, response) => {
       if (error) {
         logger.error(`Error from authentication service: ${error.message}`);
         reject(error); // Reject the Promise with the error
@@ -74,13 +77,34 @@ function Register_toAuthService(firstname, lastname, birthdate, username, email,
       password: password
     };
 
-    client.register(request, (error, response) => {
+    AuthServiceClient.register(request, (error, response) => {
       if (error) {
         logger.error(`Error from authentication service: ${error.message}`);
         reject(error); // Reject the Promise with the error
       } else {
         logger.info('Register Response:', response);
         logger.info(`Register status: ${response.status}`);
+        resolve(response); // Resolve the Promise with the response
+      }
+    });
+  });
+}
+
+async function SendMessage_toMessageDataCenter(sender, receiver, message, timestamp) {
+  return new Promise((resolve, reject) => {
+    let request = {
+      sender: sender,
+      receiver: receiver,
+      message: message,
+      timestamp: timestamp
+    };
+
+    MessageDataCenterClient.sendMessage(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from message-data-center: ${error.message}`);
+        reject(error); // Reject the Promise with the error
+      } else {
+        logger.info('SendMessage Response:', util.inspect(response, {depth: null}));
         resolve(response); // Resolve the Promise with the response
       }
     });
@@ -105,7 +129,10 @@ async function Register_fromBrowserFacade(call, callback) {
 }
 
 const server = new grpc.Server();
-server.addService(BrowserFacadeService, { Login: (call, callback) =>{BrowserFacadeHandlers.Login_fromBrowserFacade(call, callback, {logger: logger, login_toAuthService: Login_toAuthService})} , Register: Register_fromBrowserFacade });
+server.addService(BrowserFacadeService, { Login: (call, callback) =>{BrowserFacadeHandlers.Login_fromBrowserFacade(call, callback, {logger: logger, login_toAuthService: Login_toAuthService})}, 
+                                          Register: Register_fromBrowserFacade,
+                                          SendMessage: (call, callback) =>{BrowserFacadeHandlers.SendMessage_fromBrowserFacade(call, callback, {logger: logger, sendMessage_toMessageDataCenter: SendMessage_toMessageDataCenter})}
+                                        });
 server.bindAsync('0.0.0.0:50050', grpc.ServerCredentials.createInsecure(), () => {
   console.log('Server running at 0.0.0.0:50050');
 });
