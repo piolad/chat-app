@@ -23,16 +23,13 @@ namespace aspnetapp.Pages
 
         public IActionResult OnPost()
         {
-            var callOptions = new CallOptions()
-                .WithDeadline(DateTime.UtcNow.AddSeconds(10)); // 10-second timeout
-
             try
             {             
-                using var channel = GrpcChannel.ForAddress("http://main-service:50050");
+                using var channel = GrpcChannel.ForAddress("http://message-data-centre:50052"); 
                 var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
                 var request = new Message { Sender = sender, Receiver = receiver, Message_ = message, Timestamp = timestamp}; //zmiana
 
-                var response = client.SendMessage(request, callOptions);
+                var response = client.SendMessage(request);
 
                 _logger.LogInformation("Message response: {Response}", response);
             }
