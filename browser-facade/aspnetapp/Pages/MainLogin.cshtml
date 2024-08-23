@@ -1,10 +1,9 @@
 @page
-@model aspnetapp.Pages.MainMenuModel
+@model aspnetapp.Pages.MainLoginModel
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Send Message";
 }
 
-@* can be here welcome username *@
 <!DOCTYPE html>
 <html>
 <head>
@@ -25,8 +24,24 @@
             padding: 20px;
             border-radius: 10px;
         }
+        button {
+            padding: 10px 20px;
+            background-color: #0058DC;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #003BB8;
+        }
     </style>
 </head>
 <body>
+    <div class="centered-div">
+        <form method="post">
+            <button type="submit">Send</button>
+        </form>
+    </div>
 </body>
 </html>
