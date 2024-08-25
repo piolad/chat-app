@@ -25,7 +25,7 @@ namespace aspnetapp.Pages
         {
             try
             {             
-                using var channel = GrpcChannel.ForAddress("http://message-data-centre:50052"); 
+                using var channel = GrpcChannel.ForAddress("http://main-service:50050"); 
                 var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
                 var request = new Message { Sender = sender, Receiver = receiver, Message_ = message, Timestamp = timestamp}; //zmiana
 
