@@ -19,7 +19,6 @@ message LoginResponse {
     string status = 1;
     string token = 2;
     string idsession = 3;
-    // loginRequestResult result = 1;
 }
 
 message RegisterRequest {
@@ -33,28 +32,4 @@ message RegisterRequest {
 
 message RegisterResponse {
     string status = 1;
-    //registerAttemptResult result = 1;
-}
-
-enum loginRequestResult {
-    LOGIN_SUCCESS = 0;
-    LOGIN_INVALID_CREDENTIALS = 1;
-}
-
-enum registerAttemptResult {
-    REGISTER_SUCCESS = 0;
-    REGISTER_INVALID_USERNAME = 1;
-    REGISTER_USER_ALREADY_EXISTS = 2;
-
-    REGISTER_INVALID_EMAIL = 3;
-    REGISTER_EMAIL_ALREADY_EXISTS = 4;
-    REGISTER_INVALID_PASSWORD = 5;
-
-    REGISTER_USERDATA_DB_TIMEOUT = 6;
-    REGISTER_USERDATA_DB_UNAVAILABLE = 7;
-    REGISTER_USERDATA_DB_UNKNOWN_ERROR = 8;
-
-    REGISTER_ACTIVESESSIONS_DB_TIMEOUT = 9;
-    REGISTER_ACTIVESESSIONS_DB_UNAVAILABLE = 10;
-    REGISTER_ACTIVESESSIONS_DB_UNKNOWN_ERROR = 11;
 }
