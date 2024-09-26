@@ -1,12 +1,12 @@
 # browser-facade
-Browser-facade microservice is an intermediary buffer service taking REST requests from user's browser and relaying the adequate gRPC requests further, to the main-service service.
+Browser-facade microservice is an intermediary buffer service taking REST requests from user's browser and relaying the adequate gRPC requests further, to the main-service service. It serves as a presentation layer for the user, also sending HTML and CSS files to the user's browser.
 
 ## Incomming traffic (user&#8594;browser-facade) - REST
 
 ### login (POST)
 Used to log user in. 
 ##### params:
-##### &nbsp;
+
 ```cpp
     string username
     string email
