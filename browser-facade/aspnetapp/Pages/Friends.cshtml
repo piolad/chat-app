@@ -1,1 +1,10 @@
 @page
+@if (User.Identity.IsAuthenticated)
+                {
+                    <li>Welcome, @User.Identity.Name</li>
+                    <li><a href="/Logout">Logout</a></li>
+                }
+                else
+                {
+                    <li><a href="/Login">Login</a></li>
+                }
