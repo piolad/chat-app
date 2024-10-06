@@ -130,11 +130,16 @@ func ensureCollectionExists_Conversations() error {
 // FetchLastXMessages retrieves the last X messages between sender and receiver
 // FetchLastXMessages retrieves the last X messages between a sender and receiver based on their conversation_id
 func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessagesRequest) (*pb.FetchLastXMessagesResponse, error) {
+	// Log the incoming request
+	log.Printf("FetchLastXMessages called with: Sender=%s, Receiver=%s, StartingPoint=%d, Count=%d",
+	in.GetSender(), in.GetReceiver(), in.GetStartingPoint(), in.GetCount())
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
 		return nil, err
 	}
 	defer client.Disconnect(context.Background())
+
+	log.Println("Connected to MongoDB");
 
 	conversationCollection := client.Database(mongoDBName).Collection("Conversations")
 
@@ -146,6 +151,7 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 		},
 	}
 
+	log.Println("Filter: ", filter)
 	var conversation bson.M
 	err = conversationCollection.FindOne(context.Background(), filter).Decode(&conversation)
 	if err == mongo.ErrNoDocuments {
@@ -156,6 +162,7 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 
 	conversationID := conversation["_id"].(primitive.ObjectID).Hex()
 
+	log.Println("Conversation ID: ", conversationID)
 	// Now fetch messages with this conversation_id
 	messageCollection := client.Database(mongoDBName).Collection("messages")
 	messageFilter := bson.M{
@@ -172,6 +179,8 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 		return nil, err
 	}
 	defer cursor.Close(context.Background())
+
+	log.Println("Messages found: ", cursor.RemainingBatchLength())
 
 	var messages []*pb.Message
 	for cursor.Next(context.Background()) {
@@ -194,6 +203,10 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("Total messages: ", totalMessages)
+
+	log.Println("end")
 
 	hasMore := (in.GetStartingPoint() + int32(len(messages))) < int32(totalMessages)
 

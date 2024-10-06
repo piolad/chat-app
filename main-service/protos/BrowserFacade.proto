@@ -6,6 +6,8 @@ service BrowserFacade {
     rpc Login(LoginCreds) returns (LoginStatus) {}
     rpc Register(RegisterCreds) returns (RegisterStatus) {}
     rpc SendMessage (Message) returns (Response) {}
+    rpc FetchLastXMessages (FetchLastXMessagesRequest) returns (FetchLastXMessagesResponse) {}
+    rpc FetchLastXConversations (FetchLastXConversationsRequest) returns (FetchLastXConversationsResponse) {}
 }
 
 message LoginCreds {
@@ -53,3 +55,32 @@ service MessageService {
   }
   
   
+  message FetchLastXMessagesRequest {
+    string sender = 1;
+    string receiver = 2;
+    int32 startingPoint = 3;
+    int32 count = 4;
+  }
+  
+  message FetchLastXMessagesResponse {
+    repeated Message messages = 1;
+    int32 count = 2;
+    bool hasMore = 3;
+  }
+  
+  message FetchLastXConversationsRequest {
+    string conversationMember = 1;
+    int32 count = 2;
+    int32 start_index = 3;
+  }
+  
+  message SenderReceiverPair {
+    string sender = 1;
+    string receiver = 2;
+  }
+  
+  message FetchLastXConversationsResponse {
+    repeated SenderReceiverPair pairs = 1;
+    int32 count = 2;
+    bool hasMore = 3;
+  }
