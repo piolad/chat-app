@@ -227,7 +227,7 @@ func (s *server) FetchLastXConversations(ctx context.Context, in *pb.FetchLastXC
 		return nil, err
 	}
 	defer client.Disconnect(context.Background())
-
+	log.Printf("Data received: ConversationMember=%s, StartIndex=%d, Count=%d", in.GetConversationMember(), in.GetStartIndex(), in.GetCount())
 	conversationCollection := client.Database(mongoDBName).Collection("Conversations")
 
 	// Define the filter to find conversations where the user is either the sender or the receiver

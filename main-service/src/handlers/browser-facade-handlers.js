@@ -63,12 +63,8 @@ async function FetchLastXConversations_fromBrowserFacade(call, callback, data) {
   logger.info(`FetchLastXConversations request received from ${util.inspect(call.request, {depth: null})}`);
 
   try {
-    const request = {
-      conversationMember: call.request.conversationMember,
-      count: call.request.count,
-      start_index: call.request.start_index
-    };
-    const resp = await FetchLastXConversations_fromDataCenter(request);
+    const { conversationMember, count, start_index } = call.request;
+    const resp = await FetchLastXConversations_fromDataCenter(conversationMember, count, start_index);
     logger.info(`FetchLastXConversations Response: ${util.inspect(resp, { depth: null })}`);
     callback(null, {
       pairs: resp.pairs,

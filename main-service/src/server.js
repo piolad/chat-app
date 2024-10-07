@@ -156,9 +156,9 @@ async function FetchLastXConversations_toMessageDataCenter(conversationMember, c
     const request = {
       conversationMember: conversationMember,
       count: count,
-      start_index: start_index
+      startIndex: start_index
     };
-
+    logger.info(`Sending FetchLastXConversations request to message-data-center: ${util.inspect(request, { depth: null })}`);
     MessageDataCenterClient.fetchLastXConversations(request, (error, response) => {
       if (error) {
         logger.error(`Error from message-data-center (FetchLastXConversations): ${error.message}`);
