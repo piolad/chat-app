@@ -65,7 +65,6 @@ namespace aspnetapp.Pages
                                             new ClaimsPrincipal(claimsIdentity),
                                             authProperties).Wait();
                     ViewData["AlertMessage"] = "Login successful!";
-                    return RedirectToPage("/MainLogin");
                 }
                 else 
                 {
