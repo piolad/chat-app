@@ -25,7 +25,7 @@ namespace aspnetapp.Pages
         [BindProperty]
         public string Password { get; set; }
 
-        public IActionResult OnPost()
+       public IActionResult OnPost()
         {
             try
             {
@@ -65,8 +65,9 @@ namespace aspnetapp.Pages
                                             new ClaimsPrincipal(claimsIdentity),
                                             authProperties).Wait();
                     ViewData["AlertMessage"] = "Login successful!";
+                    return RedirectToPage("/MainLogin");
                 }
-                else
+                else 
                 {
                     ViewData["AlertMessage"] = "Invalid username or password. Please try again.";
                 }
