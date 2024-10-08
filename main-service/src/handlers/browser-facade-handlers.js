@@ -37,7 +37,49 @@ async function SendMessage_fromBrowserFacade(call, callback, data) {
   }
 }
 
-module.exports = {
-    Login_fromBrowserFacade,
-    SendMessage_fromBrowserFacade
+async function FetchLastXMessages_fromBrowserFacade(call, callback, data) {
+  const logger = data.logger;
+  const FetchLastXMessages_fromDataCenter = data.fetchLastXMessages_fromDataCenter;
+  logger.info(`FetchLastXMessages request received from ${util.inspect(call.request, {depth: null})}`);
+
+  try {
+    const { sender, receiver, startingPoint, count } = call.request;
+    const resp = await FetchLastXMessages_fromDataCenter(sender, receiver, startingPoint, count);
+    logger.info(`FetchLastXMessages Response: ${util.inspect(resp, { depth: null })}`);
+    callback(null, {
+      messages: resp.messages,
+      count: resp.count,
+      hasMore: resp.hasMore
+    });
+  } catch (error) {
+    logger.error(`Error occurred during FetchLastXMessages: ${error.message}`);
+    callback(error, null);
+  }
 }
+
+async function FetchLastXConversations_fromBrowserFacade(call, callback, data) {
+  const logger = data.logger;
+  const FetchLastXConversations_fromDataCenter = data.fetchLastXConversations_fromDataCenter;
+  logger.info(`FetchLastXConversations request received from ${util.inspect(call.request, {depth: null})}`);
+
+  try {
+    const { conversationMember, count, start_index } = call.request;
+    const resp = await FetchLastXConversations_fromDataCenter(conversationMember, count, start_index);
+    logger.info(`FetchLastXConversations Response: ${util.inspect(resp, { depth: null })}`);
+    callback(null, {
+      pairs: resp.pairs,
+      count: resp.count,
+      hasMore: resp.hasMore
+    });
+  } catch (error) {
+    logger.error(`Error occurred during FetchLastXConversations: ${error.message}`);
+    callback(error, null);
+  }
+}
+
+module.exports = {
+  Login_fromBrowserFacade,
+  SendMessage_fromBrowserFacade,
+  FetchLastXMessages_fromBrowserFacade,
+  FetchLastXConversations_fromBrowserFacade
+};

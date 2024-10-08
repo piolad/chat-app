@@ -1,10 +1,25 @@
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
+
+builder
+    .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(
+        options =>
+        {
+            options.LoginPath = "/Login"; // Redirect to the login page if not authenticated
+            options.LogoutPath = "/Logout"; // Redirect to logout page
+        }
+    );
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout
+});
 
 // builder.Services.ConfigureHttpJsonOptions(options =>
 // {
@@ -28,48 +43,55 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
 
-app.MapGet("/", () =>
-{
-    return Results.Redirect("/MainMenu");
-});
+app.MapGet(
+    "/",
+    () =>
+    {
+        return Results.Redirect("/MainMenu");
+    }
+);
 
 CancellationTokenSource cancellation = new();
-app.Lifetime.ApplicationStopping.Register( () =>
+app.Lifetime.ApplicationStopping.Register(() =>
 {
     cancellation.Cancel();
 });
 
-app.MapGet("/Environment", () =>
-{
-    return new EnvironmentInfo();
-});
+app.MapGet(
+    "/Environment",
+    () =>
+    {
+        return new EnvironmentInfo();
+    }
+);
 
 // This API demonstrates how to use task cancellation
 // to support graceful container shutdown via SIGTERM.
 // The method itself is an example and not useful.
-app.MapGet("/Delay/{value}", async (int value) =>
-{
-    try
+app.MapGet(
+    "/Delay/{value}",
+    async (int value) =>
     {
-        await Task.Delay(value, cancellation.Token);
+        try
+        {
+            await Task.Delay(value, cancellation.Token);
+        }
+        catch (TaskCanceledException) { }
+
+        return new Operation(value);
     }
-    catch(TaskCanceledException)
-    {
-    }
-    
-    return new Operation(value);
-});
+);
 
 app.Run();
 
 [JsonSerializable(typeof(EnvironmentInfo))]
 [JsonSerializable(typeof(Operation))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
-}
+internal partial class AppJsonSerializerContext : JsonSerializerContext { }
 
 public record struct Operation(int Delay);

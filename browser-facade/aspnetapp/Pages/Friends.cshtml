@@ -1,1 +1,20 @@
 @page
+@model FriendsModel
+
+<h2>Your Recent Conversations</h2>
+
+@if (Model.Conversations.Any())
+{
+    <ul>
+    @foreach (var conversation in Model.Conversations)
+    {
+        <li>
+            Conversation between @conversation.Sender and @conversation.Receiver
+        </li>
+    }
+    </ul>
+}
+else
+{
+    <p>You have no recent conversations.</p>
+}
