@@ -1,0 +1,35 @@
+@page "{receiver}"
+@model MessagesModel
+@{
+    ViewData["Title"] = "Chat with " + Model.Receiver;
+}
+
+<h2>Conversation with @Model.Receiver</h2>
+
+@if (Model.Messages.Any())
+{
+    <div class="messages-list">
+        <ul>
+        @foreach (var message in Model.Messages)
+        {
+            <li>
+                <strong>@message.Sender:</strong> @message.Message_ <small>(@message.Timestamp)</small>
+            </li>
+        }
+        </ul>
+    </div>
+}
+else
+{
+    <p>No messages in this conversation yet.</p>
+}
+
+<!-- Message Sending Form -->
+<form method="post" asp-page-handler="Send" asp-route-receiver="@Model.Receiver">
+    <div class="form-group">
+        <textarea asp-for="NewMessage" class="form-control" placeholder="Type your message here"></textarea>
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Send</button>
+    </div>
+</form>
