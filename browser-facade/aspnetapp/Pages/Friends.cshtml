@@ -9,7 +9,9 @@
     @foreach (var conversation in Model.Conversations)
     {
         <li>
-            Conversation between @conversation.Sender and @conversation.Receiver
+            <a asp-page="/Messages" asp-route-receiver="@conversation.Receiver">
+                Conversation with @conversation.Receiver
+            </a>
         </li>
     }
     </ul>
