@@ -15,7 +15,7 @@ const (
 	mongoDBName             = "message-db"
 )
 
-// server is used to implement service.GreeterServer.
+// server is used to implement service.MessageServiceServer.
 type server struct {
 	pb.UnimplementedMessageServiceServer
 }
@@ -30,6 +30,9 @@ type message struct {
 func main() {
 	if err := ensureCollectionExists_Messages(); err != nil {
 		log.Fatalf("failed to ensure collection exists: %v", err)
+	}
+	if err := ensureCollectionExists_Conversations(); err != nil {
+		log.Fatalf("failed to ensure conversation collection exists: %v", err)
 	}
 
 	lis, err := net.Listen("tcp", port)

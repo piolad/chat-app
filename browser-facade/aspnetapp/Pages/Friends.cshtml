@@ -1,1 +1,22 @@
 @page
+@model FriendsModel
+
+<h2>Your Recent Conversations</h2>
+
+@if (Model.Conversations.Any())
+{
+    <ul>
+    @foreach (var conversation in Model.Conversations)
+    {
+        <li>
+            <a asp-page="/Messages" asp-route-receiver="@conversation.Receiver">
+                Conversation with @conversation.Receiver
+            </a>
+        </li>
+    }
+    </ul>
+}
+else
+{
+    <p>You have no recent conversations.</p>
+}

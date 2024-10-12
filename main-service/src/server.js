@@ -128,11 +128,78 @@ async function Register_fromBrowserFacade(call, callback) {
   }
 }
 
+async function FetchLastXMessages_toMessageDataCenter(sender, receiver, startingPoint, count) {
+  return new Promise((resolve, reject) => {
+    const request = {
+      sender: sender,
+      receiver: receiver,
+      startingPoint: startingPoint,
+      count: count
+    };
+
+    logger.info(`Sending FetchLastXMessages request to message-data-center: ${util.inspect(request, { depth: null })}`);
+
+    MessageDataCenterClient.fetchLastXMessages(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from message-data-center (FetchLastXMessages): ${error.message}`);
+        reject(error);
+      } else {
+        logger.info('FetchLastXMessages Response:', util.inspect(response, { depth: null }));
+        resolve(response);
+      }
+    });
+  });
+}
+
+async function FetchLastXConversations_toMessageDataCenter(conversationMember, count, start_index) {
+  return new Promise((resolve, reject) => {
+    const request = {
+      conversationMember: conversationMember,
+      count: count,
+      startIndex: start_index
+    };
+    logger.info(`Sending FetchLastXConversations request to message-data-center: ${util.inspect(request, { depth: null })}`);
+    MessageDataCenterClient.fetchLastXConversations(request, (error, response) => {
+      if (error) {
+        logger.error(`Error from message-data-center (FetchLastXConversations): ${error.message}`);
+        reject(error);
+      } else {
+        logger.info('FetchLastXConversations Response:', util.inspect(response, { depth: null }));
+        resolve(response);
+      }
+    });
+  });
+}
+
 const server = new grpc.Server();
-server.addService(BrowserFacadeService, { Login: (call, callback) =>{BrowserFacadeHandlers.Login_fromBrowserFacade(call, callback, {logger: logger, login_toAuthService: Login_toAuthService})}, 
-                                          Register: Register_fromBrowserFacade,
-                                          SendMessage: (call, callback) =>{BrowserFacadeHandlers.SendMessage_fromBrowserFacade(call, callback, {logger: logger, sendMessage_toMessageDataCenter: SendMessage_toMessageDataCenter})}
-                                        });
+server.addService(BrowserFacadeService, {
+  Login: (call, callback) => {
+    BrowserFacadeHandlers.Login_fromBrowserFacade(call, callback, {
+      logger: logger,
+      login_toAuthService: Login_toAuthService
+    });
+  },
+  Register: Register_fromBrowserFacade,
+  SendMessage: (call, callback) => {
+    BrowserFacadeHandlers.SendMessage_fromBrowserFacade(call, callback, {
+      logger: logger,
+      sendMessage_toMessageDataCenter: SendMessage_toMessageDataCenter
+    });
+  },
+  FetchLastXMessages: (call, callback) => {
+    BrowserFacadeHandlers.FetchLastXMessages_fromBrowserFacade(call, callback, {
+      logger: logger,
+      fetchLastXMessages_fromDataCenter: FetchLastXMessages_toMessageDataCenter
+    });
+  },
+  FetchLastXConversations: (call, callback) => {
+    BrowserFacadeHandlers.FetchLastXConversations_fromBrowserFacade(call, callback, {
+      logger: logger,
+      fetchLastXConversations_fromDataCenter: FetchLastXConversations_toMessageDataCenter
+    });
+  }
+});
+
 server.bindAsync('0.0.0.0:50050', grpc.ServerCredentials.createInsecure(), () => {
   console.log('Server running at 0.0.0.0:50050');
 });

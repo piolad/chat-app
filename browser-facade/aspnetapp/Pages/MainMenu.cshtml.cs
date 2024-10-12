@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 using Grpc.Net.Client;
 using Grpc.Core;
 using BrowserFacade;
+using System.Security.Claims; // For Claim, ClaimsIdentity, ClaimsPrincipal
+using Microsoft.AspNetCore.Authentication; // For AuthenticationProperties and SignInAsync
+using Microsoft.AspNetCore.Authentication.Cookies; // For CookieAuthenticationDefaults
 
 namespace aspnetapp.Pages
 {
@@ -44,8 +47,24 @@ namespace aspnetapp.Pages
 
                 if(response.Success)
                 {
+                    // Create user claims
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, Username),
+                        new Claim(ClaimTypes.Role, "User"), // You can also set roles dynamically
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = true, // Keep the user logged in even after closing the browser (optional)
+                        ExpiresUtc = DateTime.UtcNow.AddMinutes(30) // Set session timeout
+                    };
+                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                                            new ClaimsPrincipal(claimsIdentity),
+                                            authProperties).Wait();
                     ViewData["AlertMessage"] = "Login successful!";
-                    return RedirectToPage("/MainLogin");
                 }
                 else 
                 {
