@@ -9,6 +9,12 @@ public class FriendsModel : PageModel
 {
     public List<SenderReceiverPair> Conversations { get; set; } = new List<SenderReceiverPair>();
 
+    private readonly ILogger<FriendsModel> _logger;
+    public FriendsModel(ILogger<FriendsModel> logger)
+    {
+        _logger = logger;
+    }
+
     public async Task<IActionResult> OnGet()
     {
         var user = HttpContext.User;
@@ -32,9 +38,12 @@ public class FriendsModel : PageModel
 
                 var response = await client.FetchLastXConversationsAsync(request);
 
+                _logger.LogInformation("Message response 123: {Response}", response);
+
                 if (response != null && response.Pairs != null)
                 {
                     Conversations = response.Pairs.ToList(); // Populate the Conversations property
+                    //TODO : should be reversed
                 }
             }
             catch (RpcException ex)
@@ -52,7 +61,7 @@ public class FriendsModel : PageModel
         }
         else
         {
-            return RedirectToPage("/Login");
+            return RedirectToPage("/MainMenu");
         }
     }
 }

@@ -7,6 +7,13 @@ using BrowserFacade; // Ensure this is included
 
 public class MessagesModel : PageModel
 {
+
+    private readonly ILogger<MessagesModel> _logger;
+    public MessagesModel(ILogger<MessagesModel> logger)
+    {
+        _logger = logger;
+    }
+
     public string Receiver { get; set; } // The user you are conversing with
     public List<Message> Messages { get; set; } = new List<Message>();
     [BindProperty]
@@ -18,7 +25,7 @@ public class MessagesModel : PageModel
 
         if (!user.Identity.IsAuthenticated)
         {
-            return RedirectToPage("/Login");
+            return RedirectToPage("/MainMenu");
         }
 
         var sender = user.FindFirst(ClaimTypes.Name)?.Value;
@@ -61,6 +68,12 @@ public class MessagesModel : PageModel
     {
         var user = HttpContext.User;
 
+        if(string.IsNullOrEmpty(NewMessage)){
+            //show error
+            _logger.LogInformation("Empty Message");
+            return RedirectToPage(new { receiver });
+        }
+
         if (!user.Identity.IsAuthenticated)
         {
             return RedirectToPage("/Login");
@@ -80,7 +93,7 @@ public class MessagesModel : PageModel
                 Sender = sender,
                 Receiver = receiver,
                 Message_ = NewMessage, // The text message from the form
-                Timestamp = DateTime.UtcNow.ToString("o") // Use ISO 8601 format for timestamp
+                Timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
             var response = await client.SendMessageAsync(message);
