@@ -8,6 +8,7 @@ using BrowserFacade;  // Ensure this is included
 public class FriendsModel : PageModel
 {
     public List<SenderReceiverPair> Conversations { get; set; } = new List<SenderReceiverPair>();
+    public string Username { get; set; }
 
     private readonly ILogger<FriendsModel> _logger;
     public FriendsModel(ILogger<FriendsModel> logger)
@@ -21,7 +22,7 @@ public class FriendsModel : PageModel
 
         if (user.Identity.IsAuthenticated)
         {
-            var username = user.FindFirst(ClaimTypes.Name)?.Value;
+            Username = user.FindFirst(ClaimTypes.Name)?.Value;
 
             // Fetch last conversations from the gRPC service
             try
@@ -31,7 +32,7 @@ public class FriendsModel : PageModel
 
                 var request = new FetchLastXConversationsRequest
                 {
-                    ConversationMember = username, // Use the authenticated user's name
+                    ConversationMember = Username, // Use the authenticated user's name
                     Count = 10, // Fetch the last 10 conversations
                     StartIndex = 0
                 };
