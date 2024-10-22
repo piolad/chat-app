@@ -74,8 +74,10 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminPassword
     volumes:
       - ./message-db/mongo-init-scripts:/docker-entrypoint-initdb.d
+      - ./message-db/mongod.conf:/etc/mongod.conf:ro  # Mount the custom config
     ports:
       - "27017:27017"
+    command: mongod --config /etc/mongod.conf  # Use the custom config
     depends_on:
       - message-data-centre
     networks:
