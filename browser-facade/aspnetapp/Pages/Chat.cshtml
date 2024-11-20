@@ -1,0 +1,214 @@
+@page
+@model ChatModel
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            height: calc(100vh - 76px);
+            display: flex;
+            background-color: white;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-bar {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            background-color: #f8f9fa;
+            box-sizing: border-box;
+        }
+
+        .contact-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            cursor: pointer;
+        }
+
+        .contact-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 12px;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .chat-header h5 {
+            margin: 0;
+            color: #333;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #f8f9fa;
+        }
+
+        .message-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message-row.user .bubble {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .message-row.contact .bubble {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        .chat-input {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+        }
+
+        .chat-input button {
+            padding: 8px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .chat-input button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="search-bar">
+                <input type="text" placeholder="Search contacts...">
+            </div>
+            <div class="contact-list">
+                <div class="contact-item">
+                    <div class="avatar">JP</div>
+                    <div>Message</div>
+                </div>
+                <div class="contact-item">
+                    <div class="avatar">MK</div>
+                    <div>Message</div>
+                </div>
+                <div class="contact-item">
+                    <div class="avatar">IO</div>
+                    <div>Message</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h5>Contact Name</h5>
+            </div>
+
+            <div class="messages">
+                <div class="message-row contact">
+                    <div class="bubble">Hello!</div>
+                </div>
+                <div class="message-row user">
+                    <div class="bubble">Hi there!</div>
+                </div>
+                <div class="message-row contact">
+                    <div class="bubble">How are you?</div>
+                </div>
+                <div class="message-row user">
+                    <div class="bubble">I'm good, thanks!</div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" placeholder="Type a message...">
+                <button type="submit">Send</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
