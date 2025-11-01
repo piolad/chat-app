@@ -91,7 +91,14 @@
     </style>
 </head>
 <body>
+
+    @if(User.Identity.IsAuthenticated){
+        <div>Welcome <span>@User.Identity.Name</span></div>
+    } else{
+
+    
     <div class="centered-div">
+    
         <h1>Welcome to Chat app</h1>
         <div class="login-form">
             <form method="post">
@@ -120,6 +127,7 @@
             }
         </div>
     </div>
+    }
     <script>
         function togglePasswordVisibility() {
             var passwordInput = document.getElementById("password");
