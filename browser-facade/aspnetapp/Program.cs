@@ -66,6 +66,7 @@ public interface IMainServiceService
 {
     Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct);
     Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct);
+    Task<FetchLastXConversationsResponse> FetchLastXConversationsAsync(string conversationMember, int startIndex, int count, CancellationToken ct);
 }
 
 public sealed class MainServiceService : IMainServiceService
@@ -82,6 +83,11 @@ public sealed class MainServiceService : IMainServiceService
     public async Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct){
         var req = new LoginCreds { Username = username, Password = password};
         return await _client.LoginAsync(req, cancellationToken: ct);
+    }
+
+    public async Task<FetchLastXConversationsResponse> FetchLastXConversationsAsync(string conversationMember, int startIndex, int count, CancellationToken ct){
+        var req = new FetchLastXConversationsRequest { ConversationMember = conversationMember, Count = count, StartIndex = startIndex };
+        return await _client.FetchLastXConversationsAsync(req, cancellationToken: ct);
     }
 }
 
