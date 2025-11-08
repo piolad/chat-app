@@ -48,6 +48,8 @@ services:
       - "5000:8080"
     networks:
       - main-network
+    environment:
+      - MainService__BaseAddress=http://main-service:50050
       
   main-service:
     build:

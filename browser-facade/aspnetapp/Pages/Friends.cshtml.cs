@@ -26,7 +26,7 @@ public class FriendsModel : PageModel
             // Fetch last conversations from the gRPC service
             try
             {
-                using var channel = GrpcChannel.ForAddress("http://main-service:50050");
+                using var channel = GrpcChannel.ForAddress("http://localhost:50050");
                 var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
 
                 var request = new FetchLastXConversationsRequest

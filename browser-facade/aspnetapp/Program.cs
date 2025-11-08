@@ -1,90 +1,89 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using BrowserFacade;
+using Grpc.Net.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1) Framework services
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
+builder.Services.AddSession(o => o.IdleTimeout = TimeSpan.FromMinutes(30));
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(o =>
+    {
+        o.LoginPath = "/Login";
+        o.LogoutPath = "/Logout";
+    });
 
-builder
-    .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(
-        options =>
-        {
-            options.LoginPath = "/Login"; // Redirect to the login page if not authenticated
-            options.LogoutPath = "/Logout"; // Redirect to logout page
-        }
-    );
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout
-});
+// 2) gRPC client(s) + app services (BEFORE Build)
+var addr = builder.Configuration["MainService:BaseAddress"] ?? "http://main-service:50050";
+if (addr.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+    AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
+builder.Services.AddGrpcClient<BrowserFacade.BrowserFacade.BrowserFacadeClient>(o => o.Address = new Uri(addr));
+builder.Services.AddGrpcClient<BrowserFacade.MessageService.MessageServiceClient>(o => o.Address = new Uri(addr));
+
+builder.Services.AddScoped<IChatService, ChatService>();
 
 var app = builder.Build();
 
+// 3) Middleware & endpoints
 app.MapHealthChecks("/healthz");
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
 
-app.MapGet(
-    "/",
-    () =>
-    {
-        return Results.Redirect("/MainMenu");
-    }
-);
+app.MapGet("/", () => Results.Redirect("/MainMenu"));
 
 CancellationTokenSource cancellation = new();
-app.Lifetime.ApplicationStopping.Register(() =>
+app.Lifetime.ApplicationStopping.Register(() => cancellation.Cancel());
+
+app.MapGet("/Environment", () => new EnvironmentInfo());
+app.MapGet("/Delay/{value}", async (int value) =>
 {
-    cancellation.Cancel();
+    try { await Task.Delay(value, cancellation.Token); }
+    catch (TaskCanceledException) { }
+    return new Operation(value);
 });
 
-app.MapGet(
-    "/Environment",
-    () =>
-    {
-        return new EnvironmentInfo();
-    }
-);
-
-// This API demonstrates how to use task cancellation
-// to support graceful container shutdown via SIGTERM.
-// The method itself is an example and not useful.
-app.MapGet(
-    "/Delay/{value}",
-    async (int value) =>
-    {
-        try
-        {
-            await Task.Delay(value, cancellation.Token);
-        }
-        catch (TaskCanceledException) { }
-
-        return new Operation(value);
-    }
-);
-
 app.Run();
+
+// ----- app services -----
+public interface IChatService
+{
+    Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct);
+    Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct);
+}
+
+public sealed class ChatService : IChatService
+{
+    private readonly BrowserFacade.BrowserFacade.BrowserFacadeClient _client;
+    public ChatService(BrowserFacade.BrowserFacade.BrowserFacadeClient client) => _client = client;
+
+    public async Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct)
+    {
+        var req = new Message { Sender = sender, Receiver = receiver, Message_ = message, Timestamp = timestamp };
+        return await _client.SendMessageAsync(req, cancellationToken: ct);
+    }
+
+    public async Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct){
+        var req = new LoginCreds { Username = username, Password = password};
+        return await _client.LoginAsync(req, cancellationToken: ct);
+    }
+}
 
 [JsonSerializable(typeof(EnvironmentInfo))]
 [JsonSerializable(typeof(Operation))]

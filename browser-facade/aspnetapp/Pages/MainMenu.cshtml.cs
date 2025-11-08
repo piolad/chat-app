@@ -37,7 +37,7 @@ namespace aspnetapp.Pages
 
                 _logger.LogInformation("Login submitted with Username: {Username}, Password: {Password}", Username, Password);
                 
-                using var channel = GrpcChannel.ForAddress("http://main-service:50050");
+                using var channel = GrpcChannel.ForAddress("http://localhost:50050");
                 var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
                 var request = new LoginCreds { Username = Username, Password = Password };
 
