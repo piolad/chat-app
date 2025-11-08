@@ -3,20 +3,40 @@
 
 <h2>Your Recent Conversations</h2>
 
-@if (Model.Conversations.Any())
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+@{
+    var me = User?.Identity?.Name;
+}
+
+@if (Model.Conversations?.Any() == true)
 {
-    <ul>
-    @foreach (var conversation in Model.Conversations)
+    <ul class="list-group">
+    @foreach (var c in Model.Conversations)
     {
-        <li>
-            <a asp-page="/Messages" asp-route-receiver="@conversation.Sender">
-                Conversation with @conversation.Sender
+        var other = (string?)null;
+        if (!string.IsNullOrEmpty(me))
+        {
+            other = string.Equals(c.Sender, me, StringComparison.OrdinalIgnoreCase)
+                ? c.Receiver
+                : c.Sender;
+        }
+        else
+        {
+            // Fallback if user is null; pick something deterministic
+            other = c.Sender ?? c.Receiver;
+        }
+
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a asp-page="/Messages" asp-route-receiver="@other">
+                Conversation with @other
             </a>
+            <span class="badge bg-secondary">open</span>
         </li>
     }
     </ul>
 }
 else
 {
-    <p>You have no recent conversations.</p>
+    <p class="text-muted">You have no recent conversations.</p>
 }

@@ -2,49 +2,40 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using BrowserFacade;  // Ensure this is included
+using BrowserFacade;
 
+[Authorize]
 public class FriendsModel : PageModel
 {
     public List<SenderReceiverPair> Conversations { get; set; } = new List<SenderReceiverPair>();
 
     private readonly ILogger<FriendsModel> _logger;
-    public FriendsModel(ILogger<FriendsModel> logger)
+    private readonly IMainServiceService _mainsvcsvc;
+
+    public FriendsModel(ILogger<FriendsModel> logger, IMainServiceService mainsvcsvc)
     {
         _logger = logger;
+        _mainsvcsvc = mainsvcsvc;
     }
 
-    public async Task<IActionResult> OnGet()
+    public async Task<IActionResult> OnGet(CancellationToken ct)
     {
         var user = HttpContext.User;
-
-        if (user.Identity.IsAuthenticated)
-        {
             var username = user.FindFirst(ClaimTypes.Name)?.Value;
 
             // Fetch last conversations from the gRPC service
             try
             {
-                using var channel = GrpcChannel.ForAddress("http://localhost:50050");
-                var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
+                
+                _logger.LogInformation("Fetching messages for username: {username}", username);
+                var response = await _mainsvcsvc.FetchLastXConversationsAsync(username, 0, 10, ct);
 
-                var request = new FetchLastXConversationsRequest
-                {
-                    ConversationMember = username, // Use the authenticated user's name
-                    Count = 10, // Fetch the last 10 conversations
-                    StartIndex = 0
-                };
+                _logger.LogInformation("Message response: {Response}", response);
 
-                var response = await client.FetchLastXConversationsAsync(request);
-
-                _logger.LogInformation("Message response 123: {Response}", response);
-
-                if (response != null && response.Pairs != null)
-                {
-                    Conversations = response.Pairs.ToList(); // Populate the Conversations property
-                    //TODO : should be reversed
-                }
+                
+                Conversations = response?.Pairs?.ToList() ?? new();
             }
             catch (RpcException ex)
             {
@@ -58,10 +49,5 @@ public class FriendsModel : PageModel
             }
 
             return Page();
-        }
-        else
-        {
-            return RedirectToPage("/MainMenu");
-        }
     }
 }
