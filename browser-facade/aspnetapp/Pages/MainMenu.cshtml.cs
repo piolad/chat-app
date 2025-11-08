@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Grpc.Net.Client;
 using Grpc.Core;
 using BrowserFacade;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims; // For Claim, ClaimsIdentity, ClaimsPrincipal
 using Microsoft.AspNetCore.Authentication; // For AuthenticationProperties and SignInAsync
 using Microsoft.AspNetCore.Authentication.Cookies; // For CookieAuthenticationDefaults
@@ -13,35 +14,34 @@ namespace aspnetapp.Pages
     public class MainMenuModel : PageModel
     {
         private readonly ILogger<MainMenuModel> _logger;
+        private readonly IChatService _chat;
 
-        public MainMenuModel(ILogger<MainMenuModel> logger)
+        public MainMenuModel(ILogger<MainMenuModel> logger, IChatService chat)
         {
             _logger = logger;
+            _chat = chat;
         }
 
-        [BindProperty]
+        [BindProperty, Required]
         public string Username { get; set; }
 
-        [BindProperty]
+        [BindProperty, Required]
         public string Password { get; set; }
 
-       public IActionResult OnPost()
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OnPostAsync()
         {
+            if(!ModelState.IsValid || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password)){
+                ViewData["AlertMessage"] = "Please enter a username and password.";
+                return Page();
+            }
+            
+            // loging password on purpose
+            _logger.LogInformation("Login submitted with Username: {Username}, Password: {Password}", Username, Password);
+
             try
             {
-                if(string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
-                {
-                    ViewData["AlertMessage"] = "Please enter a username and password.";
-                    return Page();
-                }
-
-                _logger.LogInformation("Login submitted with Username: {Username}, Password: {Password}", Username, Password);
-                
-                using var channel = GrpcChannel.ForAddress("http://localhost:50050");
-                var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
-                var request = new LoginCreds { Username = Username, Password = Password };
-
-                var response = client.Login(request);
+                var response = await _chat.LoginAsync(Username, Password, HttpContext.RequestAborted);
 
                 _logger.LogInformation("Login response: {Response}", response);
 
