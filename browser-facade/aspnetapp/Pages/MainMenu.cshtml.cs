@@ -14,12 +14,12 @@ namespace aspnetapp.Pages
     public class MainMenuModel : PageModel
     {
         private readonly ILogger<MainMenuModel> _logger;
-        private readonly IChatService _chat;
+        private readonly IMainServiceService _mainssvcsvc;
 
-        public MainMenuModel(ILogger<MainMenuModel> logger, IChatService chat)
+        public MainMenuModel(ILogger<MainMenuModel> logger, IMainServiceService mainssvcsvc)
         {
             _logger = logger;
-            _chat = chat;
+            _mainssvcsvc = mainssvcsvc;
         }
 
         [BindProperty, Required]
@@ -41,7 +41,7 @@ namespace aspnetapp.Pages
 
             try
             {
-                var response = await _chat.LoginAsync(Username, Password, HttpContext.RequestAborted);
+                var response = await _mainssvcsvc.LoginAsync(Username, Password, HttpContext.RequestAborted);
 
                 _logger.LogInformation("Login response: {Response}", response);
 

@@ -9,12 +9,12 @@ namespace aspnetapp.Pages
     public class MainLoginModel : PageModel
     {
         private readonly ILogger<MainLoginModel> _logger;
-        private readonly IChatService _chat;
+        private readonly IMainServiceService _mainssvcsvc;
 
-        public MainLoginModel(ILogger<MainLoginModel> logger, IChatService chat)
+        public MainLoginModel(ILogger<MainLoginModel> logger, IMainServiceService mainssvcsvc)
         {
             _logger = logger;
-            _chat = chat;
+            _mainssvcsvc = mainssvcsvc;
         }
 
         // Bind form fields
@@ -38,7 +38,7 @@ namespace aspnetapp.Pages
 
             try
             {
-                var resp = await _chat.SendMessageAsync(Sender, Receiver, Body, timestamp, HttpContext.RequestAborted);
+                var resp = await _mainssvcsvc.SendMessageAsync(Sender, Receiver, Body, timestamp, HttpContext.RequestAborted);
                 _logger.LogInformation("Message response: {Response}", resp?.Message);
                 Alert = $"✅ Sent. Server says: {resp?.Message}";
             }

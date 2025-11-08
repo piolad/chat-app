@@ -24,7 +24,7 @@ if (addr.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
 builder.Services.AddGrpcClient<BrowserFacade.BrowserFacade.BrowserFacadeClient>(o => o.Address = new Uri(addr));
 builder.Services.AddGrpcClient<BrowserFacade.MessageService.MessageServiceClient>(o => o.Address = new Uri(addr));
 
-builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IMainServiceService, MainServiceService>();
 
 var app = builder.Build();
 
@@ -62,16 +62,16 @@ app.MapGet("/Delay/{value}", async (int value) =>
 app.Run();
 
 // ----- app services -----
-public interface IChatService
+public interface IMainServiceService
 {
     Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct);
     Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct);
 }
 
-public sealed class ChatService : IChatService
+public sealed class MainServiceService : IMainServiceService
 {
     private readonly BrowserFacade.BrowserFacade.BrowserFacadeClient _client;
-    public ChatService(BrowserFacade.BrowserFacade.BrowserFacadeClient client) => _client = client;
+    public MainServiceService(BrowserFacade.BrowserFacade.BrowserFacadeClient client) => _client = client;
 
     public async Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct)
     {
