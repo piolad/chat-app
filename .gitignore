@@ -1,2 +1,7 @@
 browser-facade/aspnetapp/bin/*
 browser-facade/aspnetapp/obj/*
+
+target
+
+active-sessions/target
+auth-service/target
