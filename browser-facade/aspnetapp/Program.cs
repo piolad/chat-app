@@ -67,6 +67,8 @@ public interface IMainServiceService
     Task<Response> SendMessageAsync(string sender, string receiver, string message, string timestamp, CancellationToken ct);
     Task<LoginStatus> LoginAsync(string username, string password, CancellationToken ct);
     Task<FetchLastXConversationsResponse> FetchLastXConversationsAsync(string conversationMember, int startIndex, int count, CancellationToken ct);
+    Task<FetchLastXMessagesResponse> FetchLastXMessagesAsync(string sender, string receiver, int startingPoint, int count, CancellationToken ct);
+
 }
 
 public sealed class MainServiceService : IMainServiceService
@@ -89,6 +91,12 @@ public sealed class MainServiceService : IMainServiceService
         var req = new FetchLastXConversationsRequest { ConversationMember = conversationMember, Count = count, StartIndex = startIndex };
         return await _client.FetchLastXConversationsAsync(req, cancellationToken: ct);
     }
+
+    public async Task<FetchLastXMessagesResponse> FetchLastXMessagesAsync(string sender, string receiver, int startingPoint, int count, CancellationToken ct){
+        var req = new FetchLastXMessagesRequest { Sender = sender, Receiver = receiver, StartingPoint = startingPoint, Count = count};
+        return await _client.FetchLastXMessagesAsync(req, cancellationToken: ct);
+    }
+
 }
 
 [JsonSerializable(typeof(EnvironmentInfo))]

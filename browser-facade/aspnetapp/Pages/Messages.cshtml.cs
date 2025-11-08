@@ -2,31 +2,34 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using BrowserFacade; // Ensure this is included
 
+[Authorize]
 public class MessagesModel : PageModel
 {
 
     private readonly ILogger<MessagesModel> _logger;
-    public MessagesModel(ILogger<MessagesModel> logger)
+    private readonly IMainServiceService _mainsvcsvc;
+
+    public MessagesModel(ILogger<MessagesModel> logger, IMainServiceService mainsvcsvc)
     {
         _logger = logger;
+        _mainsvcsvc = mainsvcsvc;
     }
 
     public string Receiver { get; set; } // The user you are conversing with
+
     public List<Message> Messages { get; set; } = new List<Message>();
+
     [BindProperty]
     public string NewMessage { get; set; } // For the message input
 
-    public async Task<IActionResult> OnGet(string receiver)
+    public async Task<IActionResult> OnGet(string receiver, CancellationToken ct)
     {
-        var user = HttpContext.User;
 
-        if (!user.Identity.IsAuthenticated)
-        {
-            return RedirectToPage("/MainMenu");
-        }
+        var user = HttpContext.User;
 
         var sender = user.FindFirst(ClaimTypes.Name)?.Value;
         Receiver = receiver;
@@ -34,18 +37,9 @@ public class MessagesModel : PageModel
         // Fetch last 10 messages from the gRPC service
         try
         {
-            using var channel = GrpcChannel.ForAddress("http://main-service:50050");
-            var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
+            _logger.LogInformation("Fetching last 10 messages between {sender} and {receiver}", sender, receiver);
 
-            var request = new FetchLastXMessagesRequest
-            {
-                Sender = sender,
-                Receiver = receiver,
-                StartingPoint = 0, // Fetch from the beginning (latest messages)
-                Count = 10 // Fetch the last 10 messages
-            };
-
-            var response = await client.FetchLastXMessagesAsync(request);
+            var response = await _mainsvcsvc.FetchLastXMessagesAsync(sender, receiver, 0, 10, ct);
 
             if (response != null && response.Messages != null)
             {
@@ -64,7 +58,7 @@ public class MessagesModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostSend(string receiver)
+    public async Task<IActionResult> OnPostSend(string receiver, CancellationToken ct)
     {
         var user = HttpContext.User;
 
@@ -74,19 +68,12 @@ public class MessagesModel : PageModel
             return RedirectToPage(new { receiver });
         }
 
-        if (!user.Identity.IsAuthenticated)
-        {
-            return RedirectToPage("/Login");
-        }
-
         var sender = user.FindFirst(ClaimTypes.Name)?.Value;
         Receiver = receiver;
 
         // Send a new message via gRPC service
         try
         {
-            using var channel = GrpcChannel.ForAddress("http://main-service:50050");
-            var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
 
             var message = new Message
             {
@@ -96,12 +83,7 @@ public class MessagesModel : PageModel
                 Timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
-            var response = await client.SendMessageAsync(message);
-
-            if (response != null)
-            {
-                // Optionally handle the response message
-            }
+            var response = await _mainsvcsvc.SendMessageAsync(sender, receiver, NewMessage, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), ct);
 
             // After sending, fetch the updated message list again
             return RedirectToPage(new { receiver });
