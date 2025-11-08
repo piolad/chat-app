@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.Cookies; // For CookieAuthenticationDe
 
 namespace aspnetapp.Pages
 {
+    [ValidateAntiForgeryToken]
     public class MainMenuModel : PageModel
     {
         private readonly ILogger<MainMenuModel> _logger;
@@ -22,13 +23,9 @@ namespace aspnetapp.Pages
             _mainssvcsvc = mainssvcsvc;
         }
 
-        [BindProperty, Required]
-        public string Username { get; set; }
+        [BindProperty, Required] public string Username { get; set; } = string.Empty;
+        [BindProperty, Required] public string Password { get; set; } = string.Empty;
 
-        [BindProperty, Required]
-        public string Password { get; set; }
-
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPostAsync()
         {
             if(!ModelState.IsValid || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password)){
@@ -50,7 +47,7 @@ namespace aspnetapp.Pages
                     // Create user claims
                     var claims = new List<Claim>
                     {
-                        new Claim(ClaimTypes.Name, Username),
+                        new Claim(ClaimTypes.Name, response.Username ?? Username),
                         new Claim(ClaimTypes.Role, "User"), // You can also set roles dynamically
                     };
 
@@ -61,10 +58,13 @@ namespace aspnetapp.Pages
                         IsPersistent = true, // Keep the user logged in even after closing the browser (optional)
                         ExpiresUtc = DateTime.UtcNow.AddMinutes(30) // Set session timeout
                     };
-                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                                            new ClaimsPrincipal(claimsIdentity),
-                                            authProperties).Wait();
+                    HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
                     ViewData["AlertMessage"] = "Login successful!";
+
+                    return RedirectToPage("/Friends");
                 }
                 else 
                 {
