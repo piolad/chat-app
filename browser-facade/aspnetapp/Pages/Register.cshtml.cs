@@ -4,55 +4,58 @@ using Microsoft.Extensions.Logging;
 using Grpc.Net.Client;
 using Grpc.Core;
 using BrowserFacade;
+using System.ComponentModel.DataAnnotations;
+// using DataAnnotations;
 
 namespace aspnetapp.Pages
 {
+    public class RegisterVm
+    {
+        [Required, StringLength(30)]
+        public string Username { get; set; } = "";
+
+        [Required, EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required, DataType(DataType.Password), MinLength(6)]
+        public string Password { get; set; } = "";
+
+        [Required, StringLength(40)]
+        public string FirstName { get; set; } = "";
+
+        [Required, StringLength(40)]
+        public string LastName { get; set; } = "";
+
+        [Required, DataType(DataType.Date)]
+        public DateOnly BirthDate { get; set; }   // .NET 8 can bind DateOnly
+    }
+
+
     public class RegisterModel : PageModel
     {
         private readonly ILogger<RegisterModel> _logger;
+        private readonly IMainServiceService _mainsvcsvc;
 
-        public RegisterModel(ILogger<RegisterModel> logger)
+        public RegisterModel(ILogger<RegisterModel> logger, IMainServiceService mainsvcsvc)
         {
             _logger = logger;
+            _mainsvcsvc = mainsvcsvc;
         }
 
-        [BindProperty]
-        public string FirstName { get; set; }
-        [BindProperty]
-        public string LastName { get; set; }
-        [BindProperty]
-        public string BirthDate { get; set; }
-        [BindProperty]
-        public string Email { get; set; }
-        [BindProperty]
-        public string Username { get; set; }
-        [BindProperty]
-        public string Password { get; set; }
+        [BindProperty] public RegisterVm Input {get; set;} = new();
+        
 
-        public IActionResult  OnPost(){
+        public async Task<IActionResult>  OnPost(CancellationToken ct){
+             if (!ModelState.IsValid)
+                return Page();
+
             try
             {
-                //_logger.LogInformation("Starts with: {FirstName}, LastName: {LastName}, BirthDate: {BirthDate}, Email: {Email}, Username: {Username}, Password: {Password}", FirstName, LastName, BirthDate, Email, Username, Password);
-                if(string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) || string.IsNullOrWhiteSpace(BirthDate) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
-                {
-                    ViewData["AlertMessage"] = "Please fill out all fields.";
-                    return Page();
-                }
-
-                if (!DateTime.TryParseExact(BirthDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
-                {
-                    ViewData["AlertMessage"] = "Please fill out the data in format yyyy-MM-dd like 1999-12-31";
-                    return Page();
-                }
 
                 ViewData["AlertMessage"] = "Good done!";
-                _logger.LogInformation("Register submitted with FirstName: {FirstName}, LastName: {LastName}, BirthDate: {BirthDate}, Email: {Email}, Username: {Username}, Password: {Password}", FirstName, LastName, BirthDate, Email, Username, Password);
-                
-                using var channel = GrpcChannel.ForAddress("http://main-service:50050");
-                var client = new BrowserFacade.BrowserFacade.BrowserFacadeClient(channel);
-                var request = new RegisterCreds { Firstname = FirstName, Lastname = LastName, Birthdate = BirthDate, Email = Email, Username = Username, Password = Password };
-
-                var response = client.Register(request);
+                _logger.LogInformation("Register submitted with FirstName: {Input.FirstName}, LastName: {Input.LastName}, BirthDate: {Input.BirthDate}, Email: {Input.Email}, Username: {Input.Username}, Password: {Input.Password}", Input.FirstName, Input.LastName, Input.BirthDate, Input.Email, Input.Username, Input.Password);
+                           
+                var response = await _mainsvcsvc.RegisterAsync(Input.FirstName, Input.LastName,  Input.BirthDate.ToString("yyyy-MM-dd"), Input.Email, Input.Username, Input.Password, ct);
 
                 _logger.LogInformation("Register response: {Response}", response);
 

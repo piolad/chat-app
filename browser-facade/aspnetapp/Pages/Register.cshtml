@@ -29,6 +29,7 @@
             height: auto;
         }
         .register-form input[type="text"],
+        .register-form input[type="date"],
         .register-form input[type="password"] {
             width: calc(100% - 20px);
             padding: 10px;
@@ -52,18 +53,24 @@
         <h1 >Register</h1>
         <div class="register-form">
             <form method="post">
-                <label for="Username">Username:</label><br>
-                <input type="text" id="Username" name="Username"><br>
-                <label for="Email">Email:</label><br>
-                <input type="text" id="Email" name="Email"><br>
-                <label for="Password">Password:</label><br>
-                <input type="password" id="Password" name="Password"><br>
-                <label for="FirstName">FirstName:</label><br>
-                <input type="text" id="FirstName" name="FirstName"><br>
-                <label for="LastName">LastName:</label><br>
-                <input type="text" id="LastName" name="LastName"><br>
-                <label for="BirthDate">BirthDate:</label><br>
-                <input type="text" id="BirthDate" name="BirthDate"><br>
+                <label asp-for="Input.Username" for="Username">Username:</label><br>
+                <input asp-for="Input.Username" type="text" id="Username" name="Username"><br>
+
+                <label asp-for="Input.Email" for="Email">Email:</label><br>
+                <input asp-for="Input.Email" type="text" id="Email" name="Email"><br>
+
+                <label asp-for="Input.Password" for="Password">Password:</label><br>
+                <input asp-for="Input.Password" type="password" id="Password" name="Password"><br>
+
+                <label asp-for="Input.FirstName" for="FirstName">FirstName:</label><br>
+                <input asp-for="Input.FirstName" type="text" id="FirstName" name="FirstName"><br>
+
+                <label asp-for="Input.LastName" for="LastName">LastName:</label><br>
+                <input asp-for="Input.LastName" type="text" id="LastName" name="LastName"><br>
+
+                <label asp-for="Input.BirthDate" for="BirthDate">BirthDate:</label><br>
+                <input  asp-for="Input.BirthDate" type="date" id="BirthDate" name="BirthDate"><br>
+
                 <input type="submit" value="Register">
             </form>
              @if (ViewData["AlertMessage"] != null)
@@ -72,5 +79,19 @@
             }
         </div>
     </div>
+
+@if (TempData["Flash"] is string flash)
+{
+    <div class="alert alert-success mt-3">@flash</div>
+}
+ 
+        </div>
+    </div>
 </body>
 </html>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
