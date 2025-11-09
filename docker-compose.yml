@@ -58,6 +58,9 @@ services:
       - "50050:50050"
     networks:
       - main-network
+    environment:
+      - AUTH_ADDR=auth-service:50051
+      - MSG_ADDR=message-data-centre:50051
 
   message-data-centre:
     build:
