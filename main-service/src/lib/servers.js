@@ -23,7 +23,7 @@ function makeServers(loadedProtos, logger, { authAddr, msgAddr, insecure = true 
     return {
         auth: {
             Login: promisify(Auth, 'Login'),
-            register: promisify(Auth, 'register'),
+            Register: promisify(Auth, 'Register'),
         },
         msg: {
             SendMessage: promisify(Message, 'SendMessage'),

@@ -23,6 +23,21 @@ function makeHandlers ({logger, services}) {
       }
     }),
 
+    Register: handler_wrapper({
+      name: 'Register',
+      logger,
+      handler: async (call) => {
+        const {firstname, lastname, birthdate, username, email, password} = call.request;
+        const resp = await services.auth.Register({firstname, lastname, birthdate, username, email, password});
+        return {
+          success: resp.status == 'Success',
+          username: call.request.username,
+          token: resp.token,
+          message: resp.status,
+        }
+      }
+    }),
+
     SendMessage: handler_wrapper({
       name: 'SendMessage',
       logger,
