@@ -1,29 +1,37 @@
 use tonic::{transport::Server, Request, Response, Status};
 use tokio_postgres::NoTls;
-use dotenv::dotenv;
-//use bcrypt::{hash, verify};
 use proto::auth_server::{Auth, AuthServer};
-use tonic::transport::Channel;
+use tonic::transport::Endpoint;
+
+use std::net::SocketAddr;
+
+mod config;
+use config::Config;
 
 mod security; // Import security module where generate_rsa_keypair is defined
-
-use security::generate_rsa_keypair; // Import generate_rsa_keypair function
+use security::generate_rsa_keypair;
 
 mod proto {
     tonic::include_proto!("auth");
     tonic::include_proto!("active_sessions");
 }
 
-const BCRYPT_COST: u32 = 4; // Lower value for faster hashing, but less secure
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct AuthService {
     client: tokio_postgres::Client,
+    active_sessions_url: String,
+    default_location: String,
+    bcrypt_cost: u32,
 }
 
 impl AuthService {
-    fn new(client: tokio_postgres::Client) -> Self {
-        Self { client }
+    fn new(client: tokio_postgres::Client, cfg: &Config) -> Self {
+        Self {
+            client,
+            active_sessions_url: cfg.active_sessions_url.clone(),
+            default_location: cfg.default_location.clone(),
+            bcrypt_cost: cfg.bcrypt_cost,
+        }
     }
 }
 
@@ -57,20 +65,26 @@ impl Auth for AuthService {
         let hashed_password: String = row.get(2);
 
         if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
-            let channel = match Channel::from_static("http://active-sessions:50053").connect().await {
-                Ok(channel) => channel,
-                Err(err) => {
-                    eprintln!("Failed to connect to active sessions service: {:?}", err);
-                    return Err(Status::internal("Failed to connect to active sessions service"));
-                }
-            };
+            // Use configured Active Sessions URL
+            let channel = Endpoint::from_shared(self.active_sessions_url.clone())
+                .map_err(|e| {
+                    eprintln!("Invalid active sessions URL: {:?}", e);
+                    Status::internal("Invalid active sessions URL")
+                })?
+                .connect()
+                .await
+                .map_err(|e| {
+                    eprintln!("Failed to connect to active sessions service: {:?}", e);
+                    Status::internal("Failed to connect to active sessions service")
+                })?;
 
             let mut client = proto::active_sessions_client::ActiveSessionsClient::new(channel);
 
             let request = tonic::Request::new(proto::UserData {
-                username: username,
+                username: username.clone(),
                 email: email.to_string(),
-                location : "Warsaw".to_string(),
+                // Use configured default location
+                location: self.default_location.clone(),
             });
 
             let idsession = client.add_user(request).await?.into_inner().session_token;
@@ -78,15 +92,15 @@ impl Auth for AuthService {
 
             let reply = proto::LoginResponse {
                 status: "Success".to_string(),
-                token: "delete".to_string(), //do usunięcia
-                idsession: idsession.to_string(),     //this i get from acctive sessions
+                token: "delete".to_string(), // legacy field
+                idsession: idsession.to_string(),
             };
-            return Ok(Response::new(reply));
+            Ok(Response::new(reply))
         } else {
-            return Err(Status::unauthenticated("Invalid credentials"));
+            Err(Status::unauthenticated("Invalid credentials"))
         }
     }
-    
+
     async fn register(
         &self,
         request: Request<proto::RegisterRequest>,
@@ -97,9 +111,10 @@ impl Auth for AuthService {
 
         let email = request.email;
         let username = request.username;
-        let hashed_password = hash_password(&request.password);
+        // Hash with configured bcrypt cost
+        let hashed_password = hash_password(&request.password, self.bcrypt_cost);
 
-        generate_rsa_keypair();     //test
+        generate_rsa_keypair(); // test
 
         let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
         match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
@@ -107,7 +122,7 @@ impl Auth for AuthService {
                 let reply = proto::RegisterResponse {
                     status: "Success".to_string(),
                 };
-                return Ok(Response::new(reply));
+                Ok(Response::new(reply))
             }
             Err(e) => {
                 if e.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
@@ -115,14 +130,14 @@ impl Auth for AuthService {
                     return Err(Status::already_exists(error_msg));
                 }
                 eprintln!("Error executing SQL query: {:?}", e);
-                return Err(Status::internal("Error executing SQL query"));
+                Err(Status::internal("Error executing SQL query"))
             }
         }
     }
 }
 
-fn hash_password(password: &str) -> String {
-    bcrypt::hash(password, BCRYPT_COST).expect("Failed to hash password")
+fn hash_password(password: &str, cost: u32) -> String {
+    bcrypt::hash(password, cost).expect("Failed to hash password")
 }
 
 fn verify_password(password: &str, hashed_password: &str) -> bool {
@@ -131,13 +146,11 @@ fn verify_password(password: &str, hashed_password: &str) -> bool {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().ok();
+    // Load configuration (this also calls dotenv() inside from_env for local dev)
+    let cfg = Config::from_env()?;
 
-    let addr = "0.0.0.0:50051".parse().unwrap(); // gRPC listening address
-
-    let database_url = "postgres://postgres:mysecretpassword@auth-service-db/postgres";
-
-    let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
+    let addr: SocketAddr = cfg.server_addr;
+    let (client, connection) = tokio_postgres::connect(&cfg.database_url, NoTls).await?;
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
@@ -167,27 +180,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     client.execute(table_creation_keys, &[]).await?;
 
-    let add_user_query = format!(
-        r#"
-            INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
-            VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
-        "#,
-        hash_password("8rud!")
-    );
+    // Optionally seed 1 demo user based on config flag
+    if cfg.seed_demo_user {
+        let add_user_query = format!(
+            r#"
+                INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
+                VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
+            "#,
+            hash_password("8rud!", cfg.bcrypt_cost)
+        );
 
-    if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
-        println!("Failed to add user: {:?}", e);
+        if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
+            println!("Demo user seed: {:?}", e);
+        }
     }
 
     println!("Server listening on {}", addr);
     Server::builder()
-        .add_service(AuthServer::new(AuthService::new(client)))
+        .add_service(AuthServer::new(AuthService::new(client, &cfg)))
         .serve(addr)
         .await?;
-
     Ok(())
 }
 
-
-//wyrzucić token i expiration date dla niego
-//dodać tabele do kluczy
+// wyrzucić token i expiration date dla niego
+// dodać tabele do kluczy
