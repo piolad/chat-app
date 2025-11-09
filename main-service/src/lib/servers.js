@@ -6,7 +6,7 @@ const DEADLINE_MS = 5000;
 
 
 function promisify(server, method){
-    const fn = server[method].bind(server); // ??
+    const fn = server[method].bind(server); // fn - new function server.method
     return(req, md = new grpc.Metadata(), timeoutMs = DEADLINE_MS) => 
         new Promise((resolve, reject) => {
             const deadline = new Date(Date.now() + timeoutMs);
