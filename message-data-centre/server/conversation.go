@@ -12,18 +12,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// const (
-// 	mongoConversationCollectionName = "Conversations"
-// 	mongoMessageCollectionName      = "Messages"
-// )
 
 func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response, error) {
 	log.Printf("Recived message: %v", in.GetMessage())
 	id, err := s.ensureConversationExists(in.GetSender(), in.GetReceiver())
+	
 	if err != nil {
 		return nil, err
 	}
-	//update timestamp last
 
 	// Create a new message instance with the updated content
 	newMessage := &message{
@@ -41,7 +37,7 @@ func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response,
 func (s *server) ensureConversationExists(sender string, receiver string) (string, error) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
-		log.Fatal(err) // error during connection to
+		log.Fatal(err) // error during connecting - exit
 		return "", err
 	}
 	defer client.Disconnect(context.Background())
@@ -133,10 +129,12 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 	// Log the incoming request
 	log.Printf("FetchLastXMessages called with: Sender=%s, Receiver=%s, StartingPoint=%d, Count=%d",
 	in.GetSender(), in.GetReceiver(), in.GetStartingPoint(), in.GetCount())
+
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
 		return nil, err
 	}
+
 	defer client.Disconnect(context.Background())
 
 	log.Println("Connected to MongoDB");
