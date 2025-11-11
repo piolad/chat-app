@@ -1,163 +1,78 @@
 use tonic::{transport::Server, Request, Response, Status};
-use tokio_postgres::NoTls;
-use proto::auth_server::{Auth, AuthServer};
 use tonic::transport::Endpoint;
 
+use tokio_postgres::NoTls;
+use tokio::time::{sleep, Duration};
+
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 mod config;
 use config::Config;
 
-mod security; // Import security module where generate_rsa_keypair is defined
-use security::generate_rsa_keypair;
+mod seed_demo;
+
+mod security;
+use security::{generate_rsa_keypair, hash_password, verify_password};
+
+mod auth_service;
+use crate::auth_service::AuthService;
 
 mod proto {
     tonic::include_proto!("auth");
     tonic::include_proto!("active_sessions");
 }
+use crate::proto::auth_server::AuthServer;
 
-#[derive(Debug, Clone)]
-struct AuthService {
-    client: tokio_postgres::Client,
-    active_sessions_url: String,
-    default_location: String,
-    bcrypt_cost: u32,
-}
 
-impl AuthService {
-    fn new(client: tokio_postgres::Client, cfg: &Config) -> Self {
-        Self {
-            client,
-            active_sessions_url: cfg.active_sessions_url.clone(),
-            default_location: cfg.default_location.clone(),
-            bcrypt_cost: cfg.bcrypt_cost,
-        }
-    }
-}
+async fn connect_with_retry(db_url: &str, max_retries: u32) -> Result<tokio_postgres::Client, tokio_postgres::Error> {
+    let mut attempt = 0u32;
+    let mut backoff = Duration::from_millis(200);
 
-#[tonic::async_trait]
-impl Auth for AuthService {
-    async fn login(
-        &self,
-        request: Request<proto::LoginRequest>,
-    ) -> Result<Response<proto::LoginResponse>, Status> {
-        let request = request.into_inner();
-        let password = request.password;
+    loop {
+        match tokio_postgres::connect(db_url, NoTls).await {
+            Ok((client, connection)) => {
+                // keep the connection running
+                tokio::spawn(async move {
+                    if let Err(e) = connection.await {
+                        eprintln!("connection error: {}", e);
+                    }
+                });
 
-        let login_identifier = match request.login_data {
-            Some(proto::login_request::LoginData::Username(username)) => username,
-            Some(proto::login_request::LoginData::Email(email)) => email,
-            None => {
-                return Err(Status::invalid_argument("Username or email is required"));
-            }
-        };
-
-        let user_query = "SELECT username, email, hashed_password FROM users WHERE email = $1 OR username = $1";
-        let row = match self.client.query_one(user_query, &[&login_identifier]).await {
-            Ok(row) => row,
-            Err(_) => {
-                return Err(Status::not_found("User not found"));
-            }
-        };
-
-        let username: String = row.get(0);
-        let email: String = row.get(1);
-        let hashed_password: String = row.get(2);
-
-        if verify_password(&password, &hashed_password) && (login_identifier == email || login_identifier == username) {
-            // Use configured Active Sessions URL
-            let channel = Endpoint::from_shared(self.active_sessions_url.clone())
-                .map_err(|e| {
-                    eprintln!("Invalid active sessions URL: {:?}", e);
-                    Status::internal("Invalid active sessions URL")
-                })?
-                .connect()
-                .await
-                .map_err(|e| {
-                    eprintln!("Failed to connect to active sessions service: {:?}", e);
-                    Status::internal("Failed to connect to active sessions service")
-                })?;
-
-            let mut client = proto::active_sessions_client::ActiveSessionsClient::new(channel);
-
-            let request = tonic::Request::new(proto::UserData {
-                username: username.clone(),
-                email: email.to_string(),
-                // Use configured default location
-                location: self.default_location.clone(),
-            });
-
-            let idsession = client.add_user(request).await?.into_inner().session_token;
-            println!("idsession: {}", idsession);
-
-            let reply = proto::LoginResponse {
-                status: "Success".to_string(),
-                token: "delete".to_string(), // legacy field
-                idsession: idsession.to_string(),
-            };
-            Ok(Response::new(reply))
-        } else {
-            Err(Status::unauthenticated("Invalid credentials"))
-        }
-    }
-
-    async fn register(
-        &self,
-        request: Request<proto::RegisterRequest>,
-    ) -> Result<Response<proto::RegisterResponse>, Status> {
-        let request = request.into_inner();
-        let firstname = request.firstname;
-        let lastname = request.lastname;
-
-        let email = request.email;
-        let username = request.username;
-        // Hash with configured bcrypt cost
-        let hashed_password = hash_password(&request.password, self.bcrypt_cost);
-
-        generate_rsa_keypair(); // test
-
-        let user_query = r#"INSERT INTO users (email, username, hashed_password, first_name, last_name, date) VALUES ($1, $2, $3, $4, $5, $6)"#;
-        match self.client.execute(user_query, &[&email, &username, &hashed_password, &firstname, &lastname, &request.birthdate]).await {
-            Ok(_) => {
-                let reply = proto::RegisterResponse {
-                    status: "Success".to_string(),
-                };
-                Ok(Response::new(reply))
+                // ping to ensure the server is fully ready
+                match client.simple_query("SELECT 1").await {
+                    Ok(_) => return Ok(client),
+                    Err(e) => {
+                        attempt += 1;
+                        if attempt >= max_retries {
+                            return Err(e);
+                        }
+                    }
+                }
             }
             Err(e) => {
-                if e.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
-                    let error_msg = format!("User with email '{}' or username '{}' already exists", email, username);
-                    return Err(Status::already_exists(error_msg));
+                attempt += 1;
+                if attempt >= max_retries {
+                    return Err(e);
                 }
-                eprintln!("Error executing SQL query: {:?}", e);
-                Err(Status::internal("Error executing SQL query"))
             }
         }
+
+        // exponential backoff up to ~5s
+        sleep(backoff).await;
+        let next_ms = (backoff.as_millis() * 2).min(5000) as u64;
+        backoff = Duration::from_millis(next_ms);
     }
-}
-
-fn hash_password(password: &str, cost: u32) -> String {
-    bcrypt::hash(password, cost).expect("Failed to hash password")
-}
-
-fn verify_password(password: &str, hashed_password: &str) -> bool {
-    bcrypt::verify(password, hashed_password).expect("Failed to verify password")
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load configuration (this also calls dotenv() inside from_env for local dev)
     let cfg = Config::from_env()?;
 
     let addr: SocketAddr = cfg.server_addr;
-    let (client, connection) = tokio_postgres::connect(&cfg.database_url, NoTls).await?;
+    let client = connect_with_retry(&cfg.database_url, 30).await?;
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-
+    // Create tables
     let table_creation_users = r#"
         CREATE TABLE IF NOT EXISTS users (
             Id SERIAL PRIMARY KEY,
@@ -168,7 +83,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             last_name VARCHAR(100),
             date VARCHAR(250) NOT NULL
         )"#;
-
     client.execute(table_creation_users, &[]).await?;
 
     let table_creation_keys = r#"
@@ -177,22 +91,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             public_key TEXT NOT NULL,
             private_key TEXT NOT NULL
         )"#;
-
     client.execute(table_creation_keys, &[]).await?;
 
-    // Optionally seed 1 demo user based on config flag
+    // Seed optional demo user
     if cfg.seed_demo_user {
-        let add_user_query = format!(
-            r#"
-                INSERT INTO users (email, username, hashed_password, first_name, last_name, date)
-                VALUES ('brud@brud.pl', 'brud', '{}', 'Brudas', 'Brudowski', '2004-01-01')
-            "#,
-            hash_password("8rud!", cfg.bcrypt_cost)
-        );
-
-        if let Err(e) = client.execute(add_user_query.as_str(), &[]).await {
-            println!("Demo user seed: {:?}", e);
-        }
+        seed_demo::seed_demo_user(&client, cfg.bcrypt_cost).await;
     }
 
     println!("Server listening on {}", addr);
@@ -202,6 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     Ok(())
 }
+
 
 // wyrzucić token i expiration date dla niego
 // dodać tabele do kluczy
