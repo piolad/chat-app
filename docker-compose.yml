@@ -29,7 +29,7 @@ services:
     depends_on: 
       - active-sessions-db 
     environment: 
-      - REDIS_URL=redis://redis:6379 
+      - REDIS_URL=redis://active-sessions-db:6379
     networks:
       - main-network
       - active-sessions-network

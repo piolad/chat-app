@@ -86,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let active_sessions_service = ActiveSessionsService::new(&cfg);
 
-    println!("Server starting on {addr} (redis_url set: {})", !cfg.redis_url.is_empty());
+    println!("Server starting on {addr} (redis_url: {})", cfg.redis_url);
 
     Server::builder()
         .add_service(ActiveSessionsServer::new(active_sessions_service)) 
