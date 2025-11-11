@@ -4,6 +4,9 @@ use rand::{thread_rng, Rng};
 use async_trait::async_trait;
 use redis::AsyncCommands;
 
+mod config;
+use config::Config;
+
 pub mod active_sessions {
     tonic::include_proto!("active_sessions");
 }
@@ -12,26 +15,20 @@ use active_sessions::{UserData, UserDataResponse};
 use active_sessions::active_sessions_server::{ActiveSessions, ActiveSessionsServer};
 
 #[derive(Default)]
-pub struct ActiveSessionsService;
+pub struct ActiveSessionsService {
+    redis_url: String,
+}
 
+impl ActiveSessionsService {
+    pub fn new(cfg: &Config) -> Self {
+        Self {
+            redis_url: cfg.redis_url.clone(),
+        }
+    }
+}
 
 #[async_trait]
 impl ActiveSessions for ActiveSessionsService {
-    // async fn get_session_id(
-    //     &self, 
-    //     request: Request<IdSessionRequest>,
-    // ) -> Result<Response<IdSessionResponse>, Status> {
-
-    //     tokio::time::sleep(tokio::time::Duration::from_secs(0)).await;
-
-    //     let response = IdSessionResponse {
-    //         status: "OK".to_string(),
-    //         idsession: generate_session_token().to_string(),
-    //     };
-
-    //     Ok(Response::new(response))
-    // }
-
     async fn add_user(
         &self,
         request: Request<UserData>,
@@ -40,8 +37,7 @@ impl ActiveSessions for ActiveSessionsService {
         let user_data = request.into_inner();
         let session_token = generate_session_token();
         
-        let redis_url = "redis://active-sessions-db:6379/";
-        let redis_client = redis::Client::open(redis_url).map_err(|e| {
+        let redis_client = redis::Client::open(self.redis_url.as_str()).map_err(|e| {
             eprintln!("Failed to connect to Redis: {:?}", e);
             Status::internal("Failed to connect to Redis")
         })?;
@@ -85,15 +81,21 @@ fn generate_session_token() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:50053".parse()?;
-    let active_sessions_service = ActiveSessionsService::default();
+    let cfg = Config::from_env()?;
+    let addr = cfg.server_addr;
 
-    println!("Server starting on {}", addr);
+    let active_sessions_service = ActiveSessionsService::new(&cfg);
+
+    println!("Server starting on {addr} (redis_url set: {})", !cfg.redis_url.is_empty());
 
     Server::builder()
         .add_service(ActiveSessionsServer::new(active_sessions_service)) 
         .serve(addr)
-        .await?;
+        .await
+        .map_err(|e|{
+            eprint!("gRPC server failed: {e:?}");
+            e
+        })?;
 
     println!("Server started");
 
