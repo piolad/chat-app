@@ -11,6 +11,12 @@ services:
       - auth-network
     ports:
       - "50051:50051"
+    environment:
+      - SERVER_ADDR=0.0.0.0:50051
+      - DATABASE_URL=postgres://postgres:mysecretpassword@auth-service-db/postgres
+      - ACTIVE_SESSIONS_URL=http://active-sessions:50053
+      - BCRYPT_COST=4
+      - SEED_DEMO_USER=true
 
   auth-service-db:
     image: postgres:latest
