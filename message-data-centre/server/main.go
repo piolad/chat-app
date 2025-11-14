@@ -28,6 +28,7 @@ type message struct {
 }
 
 func main() {
+	log.Printf("Starting message-data-centre...")
 	if err := ensureCollectionExists_Messages(); err != nil {
 		log.Fatalf("failed to ensure collection exists: %v", err)
 	}
@@ -42,7 +43,7 @@ func main() {
 	
 	s := grpc.NewServer()
 	pb.RegisterMessageServiceServer(s, &server{})
-	log.Printf("server listening at %v", lis.Addr())
+	log.Printf("Server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
