@@ -18,23 +18,16 @@ const (
 	mongoDBName             = "message-db"
 )
 
-// server is used to implement service.MessageServiceServer.
+// server is used to implement service.MessageServiceServer
 type server struct {
 	pb.UnimplementedMessageServiceServer
 	mongoClient *mongo.Client
 }
 
-type message struct {
-	Message        string `bson:"message" json:"message"`
-	Timestamp      string `bson:"timestamp" json:"timestamp"`
-	ConversationID string `bson:"conversation_id" json:"conversation_id"`
-	Sender         string `bson:"sender" json:"sender"`
-}
-
 func main() {
 	ctx := context.Background()
-
 	log.Printf("Starting message-data-centre...")
+
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoDBConnectionString))
 	if err != nil {
 		log.Fatalf("Failed to connect to mogno: %v", err)
