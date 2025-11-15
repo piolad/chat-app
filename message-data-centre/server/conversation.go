@@ -12,11 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-
 func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response, error) {
 	log.Printf("Recived message: %v", in.GetMessage())
 	id, err := s.ensureConversationExists(in.GetSender(), in.GetReceiver())
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +34,7 @@ func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response,
 }
 
 func (s *server) ensureConversationExists(sender string, receiver string) (string, error) {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		log.Fatal(err) // error during connecting - exit
-		return "", err
-	}
-	defer client.Disconnect(context.Background())
-
-	collection := client.Database(mongoDBName).Collection("Conversations")
+	collection := s.mongoClient.Database(mongoDBName).Collection("Conversations")
 
 	// Define the filter to check for existing conversation in both directions
 	filter := bson.M{
@@ -53,7 +45,7 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 	}
 
 	var result bson.M
-	err = collection.FindOne(context.Background(), filter).Decode(&result)
+	err := collection.FindOne(context.Background(), filter).Decode(&result)
 	if err == mongo.ErrNoDocuments {
 		newConversation := bson.M{
 			"sender":         sender,
@@ -86,15 +78,8 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 	return conversationID, nil
 }
 
-func ensureCollectionExists_Conversations() error {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		log.Fatal(err) //error during connection to database
-		return err
-	}
-	defer client.Disconnect(context.Background())
-
-	collection := client.Database(mongoDBName).Collection("Conversations")
+func (s *server) ensureCollectionExists_Conversations(ctx context.Context) error {
+	collection := s.mongoClient.Database(mongoDBName).Collection("Conversations")
 
 	//Define the index key
 	indexKeys := bson.D{
@@ -115,7 +100,7 @@ func ensureCollectionExists_Conversations() error {
 	}
 
 	// Create the index
-	_, err = collection.Indexes().CreateOne(context.Background(), indexModel)
+	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
 	if err != nil {
 		return err
 	}
@@ -128,18 +113,9 @@ func ensureCollectionExists_Conversations() error {
 func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessagesRequest) (*pb.FetchLastXMessagesResponse, error) {
 	// Log the incoming request
 	log.Printf("FetchLastXMessages called with: Sender=%s, Receiver=%s, StartingPoint=%d, Count=%d",
-	in.GetSender(), in.GetReceiver(), in.GetStartingPoint(), in.GetCount())
+		in.GetSender(), in.GetReceiver(), in.GetStartingPoint(), in.GetCount())
 
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		return nil, err
-	}
-
-	defer client.Disconnect(context.Background())
-
-	log.Println("Connected to MongoDB");
-
-	conversationCollection := client.Database(mongoDBName).Collection("Conversations")
+	conversationCollection := s.mongoClient.Database(mongoDBName).Collection("Conversations")
 
 	// First, fetch the conversation_id for the given sender and receiver
 	filter := bson.M{
@@ -151,7 +127,7 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 
 	log.Println("Filter: ", filter)
 	var conversation bson.M
-	err = conversationCollection.FindOne(context.Background(), filter).Decode(&conversation)
+	err := conversationCollection.FindOne(context.Background(), filter).Decode(&conversation)
 	if err == mongo.ErrNoDocuments {
 		return nil, err // No conversation exists between sender and receiver
 	} else if err != nil {
@@ -162,7 +138,7 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 
 	log.Println("Conversation ID: ", conversationID)
 	// Now fetch messages with this conversation_id
-	messageCollection := client.Database(mongoDBName).Collection("messages")
+	messageCollection := s.mongoClient.Database(mongoDBName).Collection("messages")
 	messageFilter := bson.M{
 		"conversation_id": conversationID,
 	}
@@ -215,18 +191,12 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 	}, nil
 }
 
-
-
 // FetchLastXConversations retrieves the last X conversations where the sender is involved
 // FetchLastXConversations retrieves the last X conversations where the user is either a sender or a receiver
 func (s *server) FetchLastXConversations(ctx context.Context, in *pb.FetchLastXConversationsRequest) (*pb.FetchLastXConversationsResponse, error) {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		return nil, err
-	}
-	defer client.Disconnect(context.Background())
 	log.Printf("Data received: ConversationMember=%s, StartIndex=%d, Count=%d", in.GetConversationMember(), in.GetStartIndex(), in.GetCount())
-	conversationCollection := client.Database(mongoDBName).Collection("Conversations")
+
+	conversationCollection := s.mongoClient.Database(mongoDBName).Collection("Conversations")
 
 	// Define the filter to find conversations where the user is either the sender or the receiver
 	filter := bson.M{
@@ -264,13 +234,13 @@ func (s *server) FetchLastXConversations(ctx context.Context, in *pb.FetchLastXC
 		if conversationMember == sender {
 			// The user is the sender
 			pair = &pb.SenderReceiverPair{
-				Sender:   sender,  // The user is the sender
+				Sender:   sender,   // The user is the sender
 				Receiver: receiver, // The receiver is the other person
 			}
 		} else {
 			// The user is the receiver
 			pair = &pb.SenderReceiverPair{
-				Sender:   sender,  // The sender is the other person
+				Sender:   sender,   // The sender is the other person
 				Receiver: receiver, // The user is the receiver
 			}
 		}
@@ -292,4 +262,3 @@ func (s *server) FetchLastXConversations(ctx context.Context, in *pb.FetchLastXC
 		HasMore: hasMore,
 	}, nil
 }
-

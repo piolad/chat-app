@@ -10,13 +10,8 @@ import (
 
 // Saves a message to the database from the conversation service
 func (s *server) SaveMessage(ctx context.Context, in *message) error {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		return err
-	}
-	defer client.Disconnect(context.Background())
 
-	collection := client.Database(mongoDBName).Collection("messages")
+	collection := s.mongoClient.Database(mongoDBName).Collection("messages")
 
 	// Create a BSON document from the input message
 	messageDocument := bson.M{
@@ -28,7 +23,7 @@ func (s *server) SaveMessage(ctx context.Context, in *message) error {
 	}
 
 	// Insert the document into the collection
-	_, err = collection.InsertOne(context.Background(), messageDocument)
+	_, err := collection.InsertOne(context.Background(), messageDocument)
 	if err != nil {
 		return err
 	}
@@ -36,14 +31,8 @@ func (s *server) SaveMessage(ctx context.Context, in *message) error {
 	return nil
 }
 
-func ensureCollectionExists_Messages() error {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoDBConnectionString))
-	if err != nil {
-		return err
-	}
-	defer client.Disconnect(context.Background())
-
-	collection := client.Database(mongoDBName).Collection("messages")
+func (s *server) ensureCollectionExists_Messages(ctx context.Context) error {
+	collection := s.mongoClient.Database(mongoDBName).Collection("messages")
 
 	// Define the index keys
 	indexKeys := bson.D{
@@ -64,7 +53,7 @@ func ensureCollectionExists_Messages() error {
 	}
 
 	// Create the index
-	_, err = collection.Indexes().CreateOne(context.Background(), indexModel)
+	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
 	if err != nil {
 		return err
 	}
