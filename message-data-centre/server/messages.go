@@ -71,7 +71,7 @@ func (s *server) ensureCollectionExists_Messages(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) ensureConversationExists(sender string, receiver string) (string, error) {
+func (s *server) findOrCreateConversation(ctx context.Context, sender string, receiver string) (string, error) {
 	collection := s.mongoClient.Database(mongoDBName).Collection("Conversations")
 
 	// Define the filter to check for existing conversation in both directions
@@ -94,7 +94,7 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 
 		insertResult, err := collection.InsertOne(context.Background(), newConversation)
 		if err != nil {
-			log.Printf("ensureConversationExists failed: %v", err)
+			log.Printf("findOrCreateConversation failed: %v", err)
 			return "", err
 		}
 
@@ -104,7 +104,7 @@ func (s *server) ensureConversationExists(sender string, receiver string) (strin
 		return conversationID, nil
 	} else if err != nil {
 
-		log.Printf("ensureConversationExists failed: %v", err)
+		log.Printf("findOrCreateConversation failed: %v", err)
 		return "", err
 	}
 

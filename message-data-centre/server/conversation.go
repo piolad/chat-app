@@ -12,22 +12,22 @@ import (
 )
 
 func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*pb.Response, error) {
-	log.Printf("Recived message: %v", in.GetMessage())
-	id, err := s.ensureConversationExists(in.GetSender(), in.GetReceiver())
+	log.Printf("SendMessage request received: %v", in.GetMessage())
+
+	id, err := s.findOrCreateConversation(ctx, in.GetSender(), in.GetReceiver())
 
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a new message instance with the updated content
-	newMessage := &message{
-		Message:        in.GetMessage(),
-		Timestamp:      in.GetTimestamp(),
-		ConversationID: id,
-		Sender:         in.GetSender(),
-	}
-
-	s.SaveMessage(ctx, newMessage)
+	s.SaveMessage(ctx,
+		&message{
+			Message:        in.GetMessage(),
+			Timestamp:      in.GetTimestamp(),
+			ConversationID: id,
+			Sender:         in.GetSender(),
+		})
 
 	return &pb.Response{Message: "Message send by " + in.GetSender() + " to " + in.GetReceiver() + " with message : " + in.GetMessage() + " at time " + in.GetTimestamp()}, nil
 }
@@ -103,8 +103,6 @@ func (s *server) FetchLastXMessages(ctx context.Context, in *pb.FetchLastXMessag
 	}
 
 	log.Println("Total messages: ", totalMessages)
-
-	log.Println("end")
 
 	hasMore := (in.GetStartingPoint() + int32(len(messages))) < int32(totalMessages)
 
