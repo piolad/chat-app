@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"log"
 
 	"message-data-centre/server/data"
 
@@ -15,8 +16,11 @@ type MessageStore struct {
 }
 
 func NewMessageStore(client *mongo.Client, dbName string) *MessageStore {
+	col := client.Database(dbName).Collection("messages")
+	log.Printf("NewMessageStore init: db=%s col=%s", col.Database().Name(), col.Name())
+
 	return &MessageStore{
-		col: client.Database(dbName).Collection("messages"),
+		col: col,
 	}
 }
 

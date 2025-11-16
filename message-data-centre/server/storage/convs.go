@@ -20,6 +20,7 @@ type ConversationStore struct {
 func NewConversationStore(client *mongo.Client, dbName string) *ConversationStore {
 	col := client.Database(dbName).Collection("Conversations")
 	log.Printf("NewConversationStore init: db=%s col=%s", col.Database().Name(), col.Name())
+
 	return &ConversationStore{
 		col: col,
 	}
