@@ -5,3 +5,4 @@ target
 
 active-sessions/target
 auth-service/target
+.config
