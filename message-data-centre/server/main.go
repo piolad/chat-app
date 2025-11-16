@@ -1,59 +1,47 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
 
-	pb "message-data-centre/proto"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
-)
 
-const (
-	port                    = ":50051"
-	mongoDBConnectionString = "mongodb://adminUser:adminPassword@message-data-centre-db:27017"
-	mongoDBName             = "message-db"
+	pb "message-data-centre/proto"
+	"message-data-centre/server/config"
+	"message-data-centre/server/grpcserver"
+	"message-data-centre/server/service"
+	"message-data-centre/server/storage"
 )
-
-// server is used to implement service.MessageServiceServer
-type server struct {
-	pb.UnimplementedMessageServiceServer
-	mongoClient *mongo.Client
-}
 
 func main() {
-	ctx := context.Background()
-	log.Printf("Starting message-data-centre...")
+	cfg := config.Load()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoDBConnectionString))
+	client, err := storage.NewClient(cfg.MongoConnectionString)
 	if err != nil {
-		log.Fatalf("Failed to connect to mogno: %v", err)
+		log.Fatalf("failed to connect to MongoDB: %v", err)
 	}
-	s := &server{mongoClient: client}
+	defer client.Disconnect(nil)
 
-	if err := s.ensureCollectionExists_Messages(ctx); err != nil {
-		log.Fatalf("failed to ensure collection exists: %v", err)
-	}
-
-	if err := s.ensureCollectionExists_Conversations(ctx); err != nil {
-		log.Fatalf("failed to ensure conversation collection exists: %v", err)
+	if err := storage.EnsureIndexes(client, cfg.MongoDBName); err != nil {
+		log.Fatalf("failed to ensure indexes: %v", err)
 	}
 
-	lis, err := net.Listen("tcp", port)
+	msgStore := storage.NewMessageStore(client, cfg.MongoDBName)
+	convStore := storage.NewConversationStore(client, cfg.MongoDBName)
+
+	msgService := service.NewMessageService(msgStore, convStore)
+	grpcServer := grpcserver.NewServer(msgService)
+
+	lis, err := net.Listen("tcp", cfg.GRPCPort)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	s := grpc.NewServer()
+	pb.RegisterMessageServiceServer(s, grpcServer)
 
-	pb.RegisterMessageServiceServer(grpcServer, s)
-
-	log.Printf("Server listening at %v", lis.Addr())
-
-	if err := grpcServer.Serve(lis); err != nil {
+	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+	log.Printf("server listening at %v", lis.Addr())
 }
