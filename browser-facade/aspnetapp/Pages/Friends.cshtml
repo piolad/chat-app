@@ -31,7 +31,7 @@
             <a asp-page="/Messages" asp-route-receiver="@other">
                 Conversation with @other
             </a>
-            <span class="badge bg-secondary">open</span>
+            <span class="badge bg-secondary"> <a asp-page="/Messages" asp-route-receiver="@other">open</a></span>
         </li>
     }
     </ul>
